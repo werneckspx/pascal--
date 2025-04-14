@@ -1,8 +1,10 @@
 # token_types.py
 
-TOKEN_TYPES = {
-    "KEYWORDS": {
-        "program", "begin", "end", "var", "integer", "writeln"
+TIPO_TOKENS = {
+    "PALAVRA-CHAVE": {
+        "program", "var", "integer", "real", "string", "begin", "end", "for", 
+        "to", "while", "do", "break", "continue", "if", "else", "then", "write",
+        "writeln", "read", "readln"
     },
     "OPERATORS": {
         "+": "PLUS",
@@ -12,12 +14,12 @@ TOKEN_TYPES = {
         ":=": "ASSIGN",
         "=": "EQUAL"
     },
-    "DELIMITERS": {
-        ";": "SEMICOLON",
-        ".": "DOT",
-        ",": "COMMA",
-        "(": "LPAREN",
-        ")": "RPAREN",
-        ":": "COLON"
+    "DELIMITADOR": {
+        ";": "PONTO_VIRGULA",
+        ".": "PONTO_FINAL",
+        ",": "VIRGULA",
+        "(": "ABRE_PARENTESES",
+        ")": "FECHA_PARENTESES",
+        ":": "DOIS_PONTOS"
     }
 }
