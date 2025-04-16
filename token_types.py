@@ -21,5 +21,18 @@ TIPO_TOKENS = {
         "(": "ABRE_PARENTESES",
         ")": "FECHA_PARENTESES",
         ":": "DOIS_PONTOS"
+    },
+    "LOGICOS": {
+        "or": "OR",
+        "and": "AND",
+        "not": "NOT",
+    },
+    "RELACIONAIS": {
+        "==": "IGUAL",
+        "<>": "DIFERENTE",
+        "<": "MENOR",
+        ">": "MAIOR",
+        "<=": "MENOR_IGUAL",
+        ">=": "MAIOR_IGUAL",
     }
 }
