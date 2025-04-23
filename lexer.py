@@ -36,6 +36,10 @@ class Lexer:
 
             if current_char.isspace():
                 self._advance_whitespace(current_char)
+            elif current_char == '/' and self._peek_next() == '/':
+                self.comentario_simples()
+            elif current_char == '{':
+                self.comentario_multilinha()
             elif current_char.isalpha():
                 #self._logicos()
                 self._identificador_ou_palavrachave()
@@ -53,6 +57,38 @@ class Lexer:
                 self._operator_or_delimiter()
         return self.tokens
 
+    def _peek_next(self):
+        if self.pos + 1 < len(self.code):
+            return self.code[self.pos + 1]
+        return ''
+
+    def comentario_simples(self):
+        # avanca ate o fim da linha ou fim do codigo
+        while self.pos < len(self.code) and self.code[self.pos] != '\n':
+            self._advance()
+        # avanca o '\n' tambem para proxima linha
+        if self.pos < len(self.code) and self.code[self.pos] == '\n':
+            # atualiza a linha e a coluna
+            self.line += 1
+            self.col = 1
+            self.pos += 1
+
+    def comentario_multilinha(self):
+        start_line = self.line
+        start_col = self.col
+        self._advance()  # avanca o '{'
+        while self.pos < len(self.code) and self.code[self.pos] != '}':
+            if self.code[self.pos] == '\n':
+                self.line += 1
+                self.col = 1
+                self._advance()
+            else:
+                self._advance()
+        if self.pos < len(self.code) and self.code[self.pos] == '}':
+            self._advance()
+        else:
+            self.tokens.append(("ERROR", "Comentário multi-linha não fechado", start_line, start_col))
+
     def _advance(self):
         self.pos += 1
         self.col += 1
@@ -61,6 +97,8 @@ class Lexer:
         if char == '\n':
             self.line += 1
             self.col = 1
+        elif char == '\t':
+            self.col += 4  # considera tabulacao como 4 colunas
         else:
             self.col += 1
         self.pos += 1
@@ -76,7 +114,7 @@ class Lexer:
         lexeme = self.code[start_pos:self.pos]
         
         if lexeme in TIPO_TOKENS["LOGICOS"]:
-            self.tokens.append(("LOGICOS", lexeme, self.line, self.col))
+            self.tokens.append(("LOGICOS", lexeme, self.line, start_col))
         else:
             #pode dar prolema esse else de erro
             self.tokens.append(("ERROR", f"Token desconhecido {lexeme}", self.line, start_col))
@@ -106,8 +144,17 @@ class Lexer:
         while self.pos < len(self.code) and (self.code[self.pos].isalnum() or self.code[self.pos] == "_"):
             self._advance()
         lexeme = self.code[start_pos:self.pos]
-        token_type = "PALAVRA-CHAVE" if lexeme.lower() in TIPO_TOKENS["PALAVRA-CHAVE"] else "IDENTIFICADOR"
-        self.tokens.append((token_type, lexeme, self.line, start_col))
+        lexeme_lower = lexeme.lower()
+        if lexeme_lower in TIPO_TOKENS["PALAVRA-CHAVE"]:
+            token_type = "PALAVRA-CHAVE"
+            token_name = lexeme
+        elif lexeme_lower in TIPO_TOKENS["OPERADORES"]:
+            token_type = TIPO_TOKENS["OPERADORES"][lexeme_lower]
+            token_name = lexeme
+        else:
+            token_type = "IDENTIFICADOR"
+            token_name = lexeme
+        self.tokens.append((token_type, token_name, self.line, start_col))
 
     def _number(self):
         start_pos = self.pos
@@ -273,12 +320,12 @@ class Lexer:
         start_col = self.col
         ch = self.code[self.pos]
         two_char_op = self.code[self.pos:self.pos+2]
-        if two_char_op in TIPO_TOKENS["OPERATORS"]:
-            self.tokens.append((TIPO_TOKENS["OPERATORS"][two_char_op], two_char_op, self.line, start_col))
+        if two_char_op in TIPO_TOKENS["OPERADORES"]:
+            self.tokens.append((TIPO_TOKENS["OPERADORES"][two_char_op], two_char_op, self.line, start_col))
             self._advance()
             self._advance()
-        elif ch in TIPO_TOKENS["OPERATORS"]:
-            self.tokens.append((TIPO_TOKENS["OPERATORS"][ch], ch, self.line, start_col))
+        elif ch in TIPO_TOKENS["OPERADORES"]:
+            self.tokens.append((TIPO_TOKENS["OPERADORES"][ch], ch, self.line, start_col))
             self._advance()
         elif ch in TIPO_TOKENS["DELIMITADOR"]:
             self.tokens.append((TIPO_TOKENS["DELIMITADOR"][ch], ch, self.line, start_col))

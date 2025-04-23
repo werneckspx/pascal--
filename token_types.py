@@ -4,11 +4,13 @@ TIPO_TOKENS = {
         "begin", "end", "for", "to", "while", "do", "break", "continue",
         "if", "else", "then", "write", "writeln", "read", "readln"
     },
-    "OPERATORS": {
-        "+": "PLUS",
-        "-": "MINUS",
-        "*": "MULT",
-        "/": "DIV",
+    "OPERADORES": {
+        "+": "ADICAO",
+        "-": "SUBTRACAO",
+        "*": "MULTIPLICACAO",
+        "/": "DIVISAO_REAL",
+        "mod": "MODULO",
+        "div": "DIVISAO_INTEIRA",
         ":=": "ASSIGN",
         "=": "EQUAL"
     },
