@@ -1,10 +1,8 @@
-# token_types.py
-
 TIPO_TOKENS = {
     "PALAVRA-CHAVE": {
-        "program", "var", "integer", "real", "string", "begin", "end", "for", 
-        "to", "while", "do", "break", "continue", "if", "else", "then", "write",
-        "writeln", "read", "readln"
+        "program", "var", "integer", "real", "string", "boolean",
+        "begin", "end", "for", "to", "while", "do", "break", "continue",
+        "if", "else", "then", "write", "writeln", "read", "readln"
     },
     "OPERATORS": {
         "+": "PLUS",
@@ -25,7 +23,7 @@ TIPO_TOKENS = {
     "LOGICOS": {
         "or": "OR",
         "and": "AND",
-        "not": "NOT",
+        "not": "NOT"
     },
     "RELACIONAIS": {
         "==": "IGUAL",
@@ -33,6 +31,6 @@ TIPO_TOKENS = {
         "<": "MENOR",
         ">": "MAIOR",
         "<=": "MENOR_IGUAL",
-        ">=": "MAIOR_IGUAL",
+        ">=": "MAIOR_IGUAL"
     }
 }

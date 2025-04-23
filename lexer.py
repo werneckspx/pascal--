@@ -1,5 +1,3 @@
-# lexer.py
-
 from token_types import TIPO_TOKENS
 
 class Lexer:
@@ -10,7 +8,27 @@ class Lexer:
         self.col = 1
         self.tokens = []
         self.variables = {}
+        self.var_types = {}
 
+    # def tokenize(self):
+    #     while self.pos < len(self.code):
+    #         current_char = self.code[self.pos]
+
+    #         if current_char.isspace():
+    #             self._advance_whitespace(current_char)
+    #         elif current_char.isalpha():
+    #             self._identificador_ou_palavrachave()
+    #         elif current_char.isdigit() or current_char in "$&":
+    #             self._number()
+    #         elif current_char == '"':
+    #             self._string()
+    #         elif current_char == "'":
+    #             self._char()
+    #         elif current_char in [">", "<", "="]:
+    #             self._relacionais()
+    #         else:
+    #             self._operator_or_delimiter()
+    #     return self.tokens
 
     def tokenize(self):
         while self.pos < len(self.code):
@@ -25,6 +43,10 @@ class Lexer:
                 self._number()
             elif current_char == '"':
                 self._string()
+            elif current_char == "'":
+                self._char()
+            elif current_char.isdigit() or current_char in "$&":
+                self._number()
             elif current_char == ">" or current_char == "<" or current_char == "=":
                 self._relacionais()
             else:
@@ -42,7 +64,7 @@ class Lexer:
         else:
             self.col += 1
         self.pos += 1
-
+    
     def _logicos(self):
         """Operadores logicos"""
         start_col = self.col
@@ -59,23 +81,111 @@ class Lexer:
             #pode dar prolema esse else de erro
             self.tokens.append(("ERROR", f"Token desconhecido {lexeme}", self.line, start_col))
 
+    def _char(self):
+        start_col = self.col
+        start_line = self.line
+        self._advance()
+
+        start_content = self.pos
+        while self.pos < len(self.code) and self.code[self.pos] != "'":
+            self._advance()
+
+        char_content = self.code[start_content:self.pos]
+
+        if len(char_content) == 1 and self.pos < len(self.code) and self.code[self.pos] == "'":
+            self._advance()
+            self.tokens.append(("CHAR", char_content, start_line, start_col))
+        else:
+            self.tokens.append(("ERROR", "Char mal formado: deve conter exatamente 1 caractere", start_line, start_col))
+            if self.pos < len(self.code) and self.code[self.pos] == "'":
+                self._advance()
+
     def _identificador_ou_palavrachave(self):
         start_pos = self.pos
         start_col = self.col
         while self.pos < len(self.code) and (self.code[self.pos].isalnum() or self.code[self.pos] == "_"):
             self._advance()
         lexeme = self.code[start_pos:self.pos]
-        token_type = "PALAVRA-CHAVE" if lexeme.lower() in TIPO_TOKENS["PALAVRA-CHAVE"] else "IDENTIFICADOR" 
+        token_type = "PALAVRA-CHAVE" if lexeme.lower() in TIPO_TOKENS["PALAVRA-CHAVE"] else "IDENTIFICADOR"
         self.tokens.append((token_type, lexeme, self.line, start_col))
 
     def _number(self):
         start_pos = self.pos
         start_col = self.col
-        while self.pos < len(self.code) and self.code[self.pos].isdigit():
+
+        if self.code[self.pos] == '$':
             self._advance()
-        lexeme = self.code[start_pos:self.pos]
-        self.tokens.append(("NUMBER", lexeme, self.line, start_col))
-        
+            start_hex = self.pos
+            while self.pos < len(self.code) and self.code[self.pos].isalnum():
+                if self.code[self.pos].upper() not in "0123456789ABCDEF":
+                    self.tokens.append(("ERROR", "Hexadecimal mal formado", self.line, start_col))
+                    return
+                self._advance()
+            lexeme = self.code[start_pos:self.pos]
+            if self.pos == start_hex:
+                self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
+            else:
+                self.tokens.append(("NUMBER_HEX", lexeme, self.line, start_col))
+
+        elif self.code[self.pos] == '&':
+            self._advance()
+            start_octal = self.pos
+            while self.pos < len(self.code) and self.code[self.pos].isdigit():
+                if self.code[self.pos] not in "01234567":
+                    self.tokens.append(("ERROR", "Octal mal formado", self.line, start_col))
+                    return
+                self._advance()
+            lexeme = self.code[start_pos:self.pos]
+            if self.pos == start_octal:
+                self.tokens.append(("ERROR", "Octal vazio", self.line, start_col))
+            else:
+                self.tokens.append(("NUMBER_OCT", lexeme, self.line, start_col))
+
+        else:
+            has_dot = False
+            while self.pos < len(self.code) and (self.code[self.pos].isdigit() or self.code[self.pos] == "."):
+                if self.code[self.pos] == ".":
+                    if has_dot:
+                        self.tokens.append(("ERROR", "Número real mal formado (ponto duplo)", self.line, start_col))
+                        break
+                        return
+                    if self.pos + 1 < len(self.code) and self.code[self.pos + 1] == ".":
+                        break
+                    has_dot = True
+                self._advance()
+            lexeme = self.code[start_pos:self.pos]
+            if lexeme.endswith("."):
+                self.tokens.append(("ERROR", "Número real mal formado (ponto final)", self.line, start_col))
+            elif lexeme.count(".") > 1:
+                self.tokens.append(("ERROR", "Número mal formado com múltiplos pontos", self.line, start_col))
+            else:
+                tipo = "NUMBER_REAL" if has_dot else "NUMBER_INT"
+                self.tokens.append((tipo, lexeme, self.line, start_col))
+
+    # def _string(self):
+    #     start_col = self.col
+    #     start_line = self.line
+    #     self._advance()
+    #     lexeme = []
+
+    #     while self.pos < len(self.code):
+    #         current_char = self.code[self.pos]
+
+    #         if current_char == '\n':
+    #             self.tokens.append(("ERROR", "String não fechada antes de nova linha", start_line, start_col))
+    #             return
+
+    #         if current_char == '"':
+    #             self._advance()
+    #             self.tokens.append(("STRING", ''.join(lexeme), start_line, start_col))
+    #             return
+            
+
+    #         lexeme.append(current_char)
+    #         self._advance()
+
+    #     self.tokens.append(("ERROR", "String não fechada", start_line, start_col))
+
     def _string(self):
         """Tratamento das strings"""
         start_col = self.col
@@ -128,6 +238,21 @@ class Lexer:
         # string nao fechada
         self.tokens.append(("ERROR", "String não fechada", start_line, start_col))
 
+    # def _relacionais(self):
+    #     start_col = self.col
+    #     dois_char_op = self.code[self.pos:self.pos+2]
+    #     if dois_char_op in TIPO_TOKENS["RELACIONAIS"]:
+    #         self.tokens.append((TIPO_TOKENS["RELACIONAIS"][dois_char_op], dois_char_op, self.line, start_col))
+    #         self._advance()
+    #         self._advance()
+    #     elif self.code[self.pos] in TIPO_TOKENS["RELACIONAIS"]:
+    #         lexeme = self.code[self.pos]
+    #         self.tokens.append((TIPO_TOKENS["RELACIONAIS"][lexeme], lexeme, self.line, start_col))
+    #         self._advance()
+    #     else:
+    #         self.tokens.append(("ERROR", "Operador relacional inválido", self.line, start_col))
+    #         self._advance()
+    
     def _relacionais(self):
         ''' operadores relacionais '''
         start_col = self.col
@@ -143,7 +268,7 @@ class Lexer:
         else:
             self.tokens.append(("ERROR", "Operador relacional inválido", self.line, start_col))
             self._advance()
-    
+
     def _operator_or_delimiter(self):
         start_col = self.col
         ch = self.code[self.pos]
@@ -159,70 +284,107 @@ class Lexer:
             self.tokens.append((TIPO_TOKENS["DELIMITADOR"][ch], ch, self.line, start_col))
             self._advance()
         else:
-            print(f"Unknown character {ch} at line {self.line}, col {self.col}")
             self._advance()
-    
+
     def simulate_output(self):
         output = []
         i = 0
         while i < len(self.tokens):
             token = self.tokens[i]
 
-            # Trata declaração de variáveis
-            if token[0] == "PALAVRA-CHAVE" and token[1] == "var":
+            if token[0] == "PALAVRA-CHAVE" and token[1].lower() == "var":
                 i += 1
-                while self.tokens[i][0] == "IDENTIFICADOR":
+                while i < len(self.tokens) and self.tokens[i][0] == "IDENTIFICADOR":
                     var_name = self.tokens[i][1]
-                    self.variables[var_name] = 0
                     i += 1
-                    if self.tokens[i][0] == "DOIS_PONTOS":
-                        i += 1  # tipo
-                        i += 1  # pula o tipo
-                    if self.tokens[i][0] == "PONTO_VIRGULA":
+                    if i < len(self.tokens) and self.tokens[i][0] == "DOIS_PONTOS":
                         i += 1
-                        break
-
-            # Trata atribuição: x := 2 + 2;
-            elif token[0] == "IDENTIFICADOR" and self.tokens[i + 1][0] == "ASSIGN":
-                var_name = token[1]
-                i += 2  # pula o IDENTIFICADOR e o :=
-                expr = ""
-                while self.tokens[i][0] not in ["PONTO_VIRGULA"]:
-                    t_type, lex, *_ = self.tokens[i]
-                    if t_type in ["NUMBER", "IDENTIFICADOR"]:
-                        if t_type == "IDENTIFICADOR":
-                            expr += str(self.variables.get(lex, 0))
+                        tipo = self.tokens[i][1].lower()
+                        if tipo == "char":
+                            self.variables[var_name] = ''
+                        elif tipo == "boolean":
+                            self.variables[var_name] = False
                         else:
+                            self.variables[var_name] = 0
+                        self.var_types[var_name] = tipo
+                        i += 1
+                    if i < len(self.tokens) and self.tokens[i][0] == "PONTO_VIRGULA":
+                        i += 1
+
+            elif token[0] == "IDENTIFICADOR" and i+1 < len(self.tokens) and self.tokens[i+1][0] == "ASSIGN":
+                var_name = token[1]
+                var_type = self.var_types.get(var_name, "integer")
+                i += 2
+                expr = ""
+                is_real = False
+                is_boolean_expr = False
+                assigned = False
+
+                while i < len(self.tokens) and self.tokens[i][0] != "PONTO_VIRGULA":
+                    t_type, lex, *_ = self.tokens[i]
+
+                    if t_type in ["NUMBER_INT", "NUMBER_REAL", "NUMBER_HEX", "NUMBER_OCT", "IDENTIFICADOR"]:
+                        if t_type == "IDENTIFICADOR":
+                            val = self.variables.get(lex, 0)
+                            expr += str(val)
+                        elif t_type == "NUMBER_HEX":
+                            expr += str(int(lex[1:], 16))
+                        elif t_type == "NUMBER_OCT":
+                            expr += str(int(lex[1:], 8))
+                        elif t_type == "NUMBER_REAL":
                             expr += lex
+                            is_real = True
+                        elif t_type == "NUMBER_INT":
+                            expr += lex
+                    elif t_type in ["MENOR", "MAIOR", "IGUAL", "MENOR_IGUAL", "MAIOR_IGUAL", "DIFERENTE"]:
+                        expr += f" {lex} "
+                        is_boolean_expr = True
                     elif t_type == "PLUS":
                         expr += "+"
                     elif t_type == "MINUS":
                         expr += "-"
-                    elif t_type == "MULTIPLY":
+                    elif t_type == "MULT":
                         expr += "*"
-                    elif t_type == "DIVIDE":
+                    elif t_type == "DIV":
                         expr += "/"
+                        is_real = True
+                    
+                    elif t_type == "STRING":
+                        if var_type == "string":
+                            self.variables[var_name] = lex
+                            assigned = True
+                        else:
+                            self.tokens.append(("ERROR", "Tipo incompatível: esperado string", token[2], token[3]))
+                            assigned = True
+                        i += 1
+                        break
                     i += 1
+
+                if assigned:
+                    continue
+
                 try:
-                    self.variables[var_name] = eval(expr)
-                except Exception:
+                    if var_type == "boolean" or is_boolean_expr:
+                        self.variables[var_name] = bool(eval(expr))
+                    elif var_type == "real" or is_real:
+                        self.variables[var_name] = float(eval(expr))
+                    elif expr:
+                        self.variables[var_name] = int(eval(expr))
+                except:
                     self.variables[var_name] = "error"
 
-            # Trata writeln(...)
-            elif token[0] == "PALAVRA-CHAVE" and token[1] == "writeln":
-                if self.tokens[i + 1][0] == "ABRE_PARENTESES":
+            elif token[0] == "PALAVRA-CHAVE" and token[1].lower() == "writeln":
+                if i+1 < len(self.tokens) and self.tokens[i+1][0] == "ABRE_PARENTESES":
                     i += 2
                     out_line = ""
-                    while self.tokens[i][0] != "FECHA_PARENTESES":
+                    while i < len(self.tokens) and self.tokens[i][0] != "FECHA_PARENTESES":
                         t_type, lex, *_ = self.tokens[i]
                         if t_type == "STRING":
                             out_line += lex
-                        elif t_type == "NUMBER":
+                        elif t_type == "CHAR":
                             out_line += lex
                         elif t_type == "IDENTIFICADOR":
                             out_line += str(self.variables.get(lex, "undefined"))
-                        elif t_type == "PLUS":
-                            out_line += " + "
                         i += 1
                     output.append(out_line.strip())
             i += 1

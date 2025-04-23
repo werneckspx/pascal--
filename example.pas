@@ -10,4 +10,6 @@ begin
     y := 12 - z;
     writeln("Hello World!");
     writeln(x);
+    writeln(y);
+    writeln(z);
 end.
