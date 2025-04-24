@@ -264,16 +264,13 @@ class Lexer:
                 escape_char = self.code[self.pos]
                 if escape_char == 'n':
                     lexeme.append('\n')
-                    self.line+= 1
-                    self.col= 1
                 elif escape_char == 't':
                     lexeme.append('\t')
-                    self.col+= 4
                 elif escape_char == 'r':
                     lexeme.append('\r')
+                elif escape_char == '\\':
+                    lexeme.append('\\')   
                 else:
-                    # Escape errado
-                    self.tokens.append(("ERROR", f"Escape inválido \\{escape_char}", self.line, self.col))
                     lexeme.append('\\')  
                     lexeme.append(escape_char)
                 self._advance()  
@@ -301,19 +298,29 @@ class Lexer:
     #         self._advance()
     
     def _relacionais(self):
-        ''' operadores relacionais '''
+        """Operadores relacionais e atribuição"""
         start_col = self.col
-        dois_char_op = self.code[self.pos:self.pos+2]
+        dois_char_op = self.code[self.pos:self.pos+2]  
+
+        #  ==, <=, >=, <>
         if dois_char_op in TIPO_TOKENS["RELACIONAIS"]:
             self.tokens.append((TIPO_TOKENS["RELACIONAIS"][dois_char_op], dois_char_op, self.line, start_col))
             self._advance()
             self._advance()
+        #  '='
+        elif self.code[self.pos] == '=':
+            if (self.pos + 1 < len(self.code) and self.code[self.pos + 1].isalnum()) or (self.pos + 2 < len(self.code) and self.code[self.pos + 2].isalnum()):
+                self.tokens.append(("EQUAL", "=", self.line, start_col))
+            else:
+                self.tokens.append((TIPO_TOKENS["RELACIONAIS"]["="], "=", self.line, start_col))
+            self._advance()
+        #  <, >
         elif self.code[self.pos] in TIPO_TOKENS["RELACIONAIS"]:
             lexeme = self.code[self.pos]
             self.tokens.append((TIPO_TOKENS["RELACIONAIS"][lexeme], lexeme, self.line, start_col))
             self._advance()
         else:
-            self.tokens.append(("ERROR", "Operador relacional inválido", self.line, start_col))
+            self.tokens.append(("ERROR", f"Operador relacional inválido '{self.code[self.pos]}'", self.line, start_col))
             self._advance()
 
     def _operator_or_delimiter(self):
