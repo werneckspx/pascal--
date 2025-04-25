@@ -270,28 +270,23 @@ class Lexer:
     def _relacionais(self):
         """Operadores relacionais e atribuição"""
         start_col = self.col
-        dois_char_op = self.code[self.pos:self.pos+2]  
+        dois_char_op = self.code[self.pos:self.pos+2]
 
-        #  ==, <=, >=, <>
+        # ==, <=, >=, <>
         if dois_char_op in TIPO_TOKENS["RELACIONAIS"]:
             self.tokens.append((TIPO_TOKENS["RELACIONAIS"][dois_char_op], dois_char_op, self.line, start_col))
             self._advance()
             self._advance()
-        #  '='
-        elif self.code[self.pos] == '=':
-            if (self.pos + 1 < len(self.code) and self.code[self.pos + 1].isalnum()) or (self.pos + 2 < len(self.code) and self.code[self.pos + 2].isalnum()):
-                self.tokens.append(("IGUAL", "=", self.line, start_col))
-            else:
-                self.tokens.append((TIPO_TOKENS["RELACIONAIS"]["="], "=", self.line, start_col))
-            self._advance()
-        #  <, >
+        # =, <, >
         elif self.code[self.pos] in TIPO_TOKENS["RELACIONAIS"]:
-            lexeme = self.code[self.pos]
-            self.tokens.append((TIPO_TOKENS["RELACIONAIS"][lexeme], lexeme, self.line, start_col))
+            op = self.code[self.pos]
+            self.tokens.append((TIPO_TOKENS["RELACIONAIS"][op], op, self.line, start_col))
             self._advance()
+        # erro
         else:
             self.tokens.append(("ERROR", f"Operador relacional inválido '{self.code[self.pos]}'", self.line, start_col))
             self._advance()
+
 
     def _operador_ou_delimitador_(self):
         """Tratamento de operadores e delimitadores"""
