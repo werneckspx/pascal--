@@ -149,7 +149,8 @@ class Lexer:
         start_pos = self.pos
         start_col = self.col
 
-        if ((self.code[self.pos] == '$') or (self.code[self.pos] == '0' and self.code[self.pos+1] == 'x')):
+        # verifica hexadecimal "$"
+        if self.code[self.pos] == '$':
             self._advance()
             start_hex = self.pos
             # Verifica se o próximo caractere é um dígito hexadecimal
@@ -163,6 +164,22 @@ class Lexer:
                 self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
             else:
                 self.tokens.append(("NUMERO_HEX", lexeme, self.line, start_col))
+
+        #verifica hexadecimal "0x"
+        elif self.code[self.pos] == '0' and self.pos + 1 < len(self.code) and self.code[self.pos + 1] in ['x', 'X']:
+            self._advance()  # avança o 0
+            self._advance()  # avança o x
+            start_hex = self.pos
+            while self.pos < len(self.code) and self.code[self.pos].isalnum():
+                if self.code[self.pos].upper() not in "0123456789ABCDEF":
+                    self.tokens.append(("ERROR", "Hexadecimal mal formado", self.line, start_col))
+                    return
+                self._advance()
+            lexeme = self.code[start_pos:self.pos]
+            if self.pos == start_hex:
+                self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
+            else:
+                self.tokens.append(("NUMBER_HEX", lexeme, self.line, start_col))
 
         ## Verifica se o caractere é um dígito octal
         elif (self.code[self.pos] == '&' or ((self.code[self.pos] == '0') and (self.code[self.pos+1] in "1234567" ))):
