@@ -1,0 +1,23 @@
+=== Pasta: lista1 	 | 	 Arquivo: lista1\EXS1.pas ===
+
+ ===TOKENS=== 
+('PALAVRA-CHAVE', 'program', 1, 1)
+('IDENTIFICADOR', 'exs1', 1, 9)
+('PONTO_VIRGULA', ';', 1, 13)
+('IDENTIFICADOR', 'uses', 3, 1)
+('IDENTIFICADOR', 'crt', 3, 6)
+('PONTO_VIRGULA', ';', 3, 9)
+('PALAVRA-CHAVE', 'var', 5, 1)
+('IDENTIFICADOR', 'n1', 5, 5)
+('VIRGULA', ',', 5, 7)
+('IDENTIFICADOR', 'n2', 5, 8)
+('VIRGULA', ',', 5, 10)
+('IDENTIFICADOR', 'n3', 5, 11)
+('VIRGULA', ',', 5, 13)
+('IDENTIFICADOR', 'n4', 5, 14)
+('DOIS_PONTOS', ':', 5, 16)
+('PALAVRA-CHAVE', 'real', 5, 18)
+('PONTO_VIRGULA', ';', 5, 22)
+[ERRO] Hexadecimal mal formado na linha 7, coluna 1
+====================================================================================================
+

@@ -1,3 +1,4 @@
+# Dicionário de tipos de tokens para o analisador léxico #
 TIPO_TOKENS = {
     "PALAVRA-CHAVE": {
         "program", "var", "integer", "real", "string", "boolean",
@@ -11,8 +12,7 @@ TIPO_TOKENS = {
         "/": "DIVISAO_REAL",
         "mod": "MODULO",
         "div": "DIVISAO_INTEIRA",
-        ":=": "ASSIGN",
-        "=": "EQUAL"
+        ":=": "ATRIBUICAO",
     },
     "DELIMITADOR": {
         ";": "PONTO_VIRGULA",
@@ -23,12 +23,13 @@ TIPO_TOKENS = {
         ":": "DOIS_PONTOS"
     },
     "LOGICOS": {
-        "or": "OR",
-        "and": "AND",
-        "not": "NOT"
+        "or": "OU",
+        "and": "E",
+        "not": "NAO"
     },
     "RELACIONAIS": {
         "==": "IGUAL",
+        "=": "IGUAL",
         "<>": "DIFERENTE",
         "<": "MENOR",
         ">": "MAIOR",
