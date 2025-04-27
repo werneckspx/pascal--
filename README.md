@@ -9,7 +9,7 @@
 
 ### No Visual Studio Code
 
-Basta selecionar **Run** (Executar) para compilar e executar o projeto.
+Basta selecionar **Run** (Executar) para compilar e executar o projeto a partir no arquivo main.py.
 
 ### Via Terminal
 
