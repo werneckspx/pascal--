@@ -1,1 +1,2 @@
-# pascal--
+# Analisador Léxico da Linguagem Pascal-- #
+
