@@ -105,25 +105,7 @@ class Lexer:
             #pode dar prolema esse else de erro
             self.tokens.append(("ERROR", f"Token desconhecido {lexeme}", self.line, start_col))
 
-    def _char(self):
-        """Tratamento de char"""
-        start_col = self.col
-        start_line = self.line
-        self._advance()
-
-        start_content = self.pos
-        while self.pos < len(self.code) and self.code[self.pos] != "'":
-            self._advance()
-
-        char_content = self.code[start_content:self.pos]
-
-        if len(char_content) == 1 and self.pos < len(self.code) and self.code[self.pos] == "'":
-            self._advance()
-            self.tokens.append(("CHAR", char_content, start_line, start_col))
-        else:
-            self.tokens.append(("ERROR", "Char mal formado: deve conter exatamente 1 caractere", start_line, start_col))
-            if self.pos < len(self.code) and self.code[self.pos] == "'":
-                self._advance()
+    
 
     def _identificador_ou_palavrachave(self):
         """Tratamento de identificadores e palavras-chave"""
@@ -204,19 +186,31 @@ class Lexer:
                     if has_dot:
                         self.tokens.append(("ERROR", "Número real mal formado (ponto duplo)", self.line, start_col))
                         break
-                        return
-                    if self.pos + 1 < len(self.code) and self.code[self.pos + 1] == ".":
-                        break
+                    if self.pos + 1 < len(self.code):
+                        next_char = self.code[self.pos + 1]
+                        if next_char == ".":
+                            break
+                        elif next_char.isdigit():
+                            pass 
+                        elif next_char in (" ", "\n", ";", ")", ","):
+                            pass 
+                        else:
+                            self.tokens.append(("ERROR", "Número real mal formado (caractere inválido após ponto)", self.line, start_col))
+                            break
                     has_dot = True
                 self._advance()
+            
             lexeme = self.code[start_pos:self.pos]
-            if lexeme.endswith("."):
-                self.tokens.append(("ERROR", "Número real mal formado (ponto final)", self.line, start_col))
-            elif lexeme.count(".") > 1:
-                self.tokens.append(("ERROR", "Número mal formado com múltiplos pontos", self.line, start_col))
-            else:
-                tipo = "NUMERO_REAL" if has_dot else "NUMERO_INT"
-                self.tokens.append((tipo, lexeme, self.line, start_col))
+
+            if has_dot:
+                if lexeme.endswith("."):
+                    lexeme += "0"
+                else:
+                    lexeme += "0" 
+
+            tipo = "NUMBER_REAL" if has_dot else "NUMBER_INT"
+            self.tokens.append((tipo, lexeme, self.line, start_col))
+
 
     def _string(self):
         """Tratamento das strings"""
