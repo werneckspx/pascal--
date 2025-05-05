@@ -1,4 +1,4 @@
-"""
+
 from lexer import Lexer
 
 def read_pascal_file(filename):
@@ -6,23 +6,30 @@ def read_pascal_file(filename):
         return file.read()
 
 def main():
-    source_code = read_pascal_file("lista3/EXS25.pas")
-    lexer = Lexer(source_code)
-    tokens = lexer.tokenize()
 
-    print("=== TOKENS ===")
-    for token in tokens:
-        if token[0] == "ERROR":
-            print(f"[ERRO] {token[1]} na linha {token[2]}, coluna {token[3]}")
-            break
-        else:
-            print(token)
-    print("\n")
+    filename = input("Digite o caminho do arquivo Pascal: ") #listax/EXSy.pas #
+    try:
+        source_code = read_pascal_file(filename)
+        lexer = Lexer(source_code)
+        tokens = lexer.tokenize()
+
+        print("=== TOKENS ===")
+        for token in tokens:
+            if token[0] == "ERROR":
+                print(f"[ERRO] {token[1]} na linha {token[2]}, coluna {token[3]}")
+                break
+            else:
+                print(token)
+        print("\n")
+    except FileNotFoundError:
+        print(f"[ERRO] Arquivo '{filename}' não encontrado.")
+    except Exception as e:
+        print(f"[ERRO] Ocorreu um erro: {e}")
 
 if __name__ == "__main__":
     main()
-"""
 
+"""
 import os
 import sys
 from lexer import Lexer
@@ -62,5 +69,7 @@ def process_files():
                     out.write(f"[ERRO] Arquivo não encontrado: {filename}\n")
                     out.write("=" * 100 + "\n")
 
+
 if __name__ == "__main__":
     process_files()
+"""

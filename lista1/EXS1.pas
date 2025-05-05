@@ -1,11 +1,20 @@
 program exs1;
 
+
+
+10b
+&1234a
+
 uses crt;
 
 var n1,n2,n3,n4: real;
 ==3 =2 =1=1 =; ==
-0xA5
+0xA5 
 $12321
+
+and
+or
+not
 
 begin;
 
