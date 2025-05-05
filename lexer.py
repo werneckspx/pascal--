@@ -119,7 +119,7 @@ class Lexer:
             return
 
         # Caso contrário, trata como identificador
-        self.tokens.append(("IDENTIFICADOR", lexeme, self.line, start_col))
+        self.tokens.append((TIPO_TOKENS["IDENTIFICADOR"], lexeme, self.line, start_col))
 
     def _numero(self):
         """Tratamento de números"""
@@ -140,7 +140,7 @@ class Lexer:
             if self.pos == start_hex:
                 self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
             else:
-                self.tokens.append(("NUMERO_HEX", lexeme, self.line, start_col))
+                self.tokens.append((TIPO_TOKENS["NUMBER_HEX"], lexeme, self.line, start_col))
 
         #verifica hexadecimal "0x"
         elif self.code[self.pos] == '0' and self.pos + 1 < len(self.code) and self.code[self.pos + 1] in ['x', 'X']:
@@ -156,7 +156,7 @@ class Lexer:
             if self.pos == start_hex:
                 self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
             else:
-                self.tokens.append(("NUMBER_HEX", lexeme, self.line, start_col))
+                self.tokens.append((TIPO_TOKENS["NUMBER_HEX"], lexeme, self.line, start_col))
 
         ## Verifica se o caractere é um dígito octal
         elif (self.code[self.pos] == '&' or ((self.code[self.pos] == '0') and (self.code[self.pos+1] in "1234567" ))):
@@ -171,7 +171,7 @@ class Lexer:
             if self.pos == start_octal:
                 self.tokens.append(("ERROR", "Octal vazio", self.line, start_col))
             else:
-                self.tokens.append(("NUMERO_OCT", lexeme, self.line, start_col))
+                self.tokens.append((TIPO_TOKENS["NUMERO_OCT"], lexeme, self.line, start_col))
 
         ## Verifica se o caractere é um dígito decimal
         else:
@@ -203,7 +203,7 @@ class Lexer:
                 else:
                     lexeme += "0" 
 
-            tipo = "NUMBER_REAL" if has_dot else "NUMBER_INT"
+            tipo = TIPO_TOKENS["NUMBER_REAL"] if has_dot else TIPO_TOKENS["NUMBER_INT"]
             self.tokens.append((tipo, lexeme, self.line, start_col))
 
 
@@ -225,7 +225,7 @@ class Lexer:
             if current_char == '"':
                 # Fecha a string
                 self._advance() 
-                self.tokens.append(("STRING", ''.join(lexeme), start_line, start_col))
+                self.tokens.append((TIPO_TOKENS["STRING"], ''.join(lexeme), start_line, start_col))
                 return
 
             if current_char == '\\':

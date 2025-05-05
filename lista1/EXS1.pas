@@ -1,7 +1,7 @@
 program exs1;
 
 
-
+10.
 10b
 &1234a
 

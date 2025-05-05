@@ -53,5 +53,12 @@ TIPO_TOKENS = {
         ">": 41,
         "<=": 42,
         ">=": 43
-    }
+    },
+
+    "IDENTIFICADOR": 44,
+    "NUMBER_INT": 45,
+    "NUMBER_REAL": 46,
+    "NUMBER_HEX": 47,
+    "NUMERO_OCT": 48,
+    "STRING": 49
 }
