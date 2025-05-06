@@ -28,8 +28,8 @@ class Lexer:
                 self._numero()
             elif current_char == '"':
                 self._string()
-            elif current_char == "'":
-                self._char()
+            #elif current_char == "'":
+                #self._char()
             elif current_char.isdigit() or current_char in "$&":
                 self._numero()
             elif current_char == ">" or current_char == "<" or current_char == "=":

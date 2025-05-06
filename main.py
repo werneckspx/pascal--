@@ -1,5 +1,6 @@
 
 from lexer import Lexer
+from sintatico import Sintatic
 
 def read_pascal_file(filename):
     with open(filename, "r") as file:
@@ -23,6 +24,16 @@ def main():
         print("\n")
     except FileNotFoundError:
         print(f"[ERRO] Arquivo '{filename}' não encontrado.")
+    except Exception as e:
+        print(f"[ERRO] Ocorreu um erro: {e}")
+    
+    sintatico = Sintatic(tokens)
+    print("=== ANÁLISE SINTÁTICA ===")
+    try:
+        sintatico.analisar()
+        print("Análise sintática concluída com sucesso!")
+    except SyntaxError as e:
+        print(f"[ERRO SINTÁTICO] {e}")
     except Exception as e:
         print(f"[ERRO] Ocorreu um erro: {e}")
 
