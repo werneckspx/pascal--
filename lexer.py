@@ -120,6 +120,11 @@ class Lexer:
 
         # Caso contrário, trata como identificador
         self.tokens.append((TIPO_TOKENS["IDENTIFICADOR"], lexeme, self.line, start_col))
+    
+    # funcao para verificar se o proximo caractere é delimitador
+    def delimitador(self, char):
+        return char in (" ", "\n", ";", ")", ",", ":")
+
 
     def _numero(self):
         """Tratamento de números"""
@@ -158,8 +163,9 @@ class Lexer:
             else:
                 self.tokens.append((TIPO_TOKENS["NUMBER_HEX"], lexeme, self.line, start_col))
 
-        ## Verifica se o caractere é um dígito octal
-        elif (self.code[self.pos] == '&' or ((self.code[self.pos] == '0') and (self.code[self.pos+1] in "1234567" ))):
+        # Verifica se o caractere é um dígito octal
+        elif (self.code[self.pos] == '&' or (
+            self.code[self.pos] == '0' and self.pos + 1 < len(self.code) and self.code[self.pos + 1] in "1234567")):
             self._advance()
             start_octal = self.pos
             while self.pos < len(self.code) and self.code[self.pos].isdigit():
@@ -167,44 +173,55 @@ class Lexer:
                     self.tokens.append(("ERROR", "Octal mal formado", self.line, start_col))
                     return
                 self._advance()
+
             lexeme = self.code[start_pos:self.pos]
+
             if self.pos == start_octal:
                 self.tokens.append(("ERROR", "Octal vazio", self.line, start_col))
-            else:
-                self.tokens.append((TIPO_TOKENS["NUMERO_OCT"], lexeme, self.line, start_col))
+                return
 
-        ## Verifica se o caractere é um dígito decimal
+            # Verifica se o próximo caractere é aceitável
+            if self.pos < len(self.code) and not self.delimitador(self.code[self.pos]):
+                self.tokens.append(("ERROR", "Octal mal formado (caractere após número)", self.line, start_col))
+                return
+
+            self.tokens.append((TIPO_TOKENS["NUMERO_OCT"], lexeme, self.line, start_col))
+
+        # Verifica se o caractere é um dígito decimal ou real
         else:
             has_dot = False
             while self.pos < len(self.code) and (self.code[self.pos].isdigit() or self.code[self.pos] == "."):
                 if self.code[self.pos] == ".":
                     if has_dot:
                         self.tokens.append(("ERROR", "Número real mal formado (ponto duplo)", self.line, start_col))
-                        break
+                        return
                     if self.pos + 1 < len(self.code):
                         next_char = self.code[self.pos + 1]
                         if next_char == ".":
-                            break
-                        elif next_char.isdigit():
-                            pass 
-                        elif next_char in (" ", "\n", ";", ")", ","):
-                            pass 
-                        else:
+                            break  # ponto duplo ".." é parte de outro token
+                        elif not (next_char.isdigit() or self.delimitador(next_char)):
                             self.tokens.append(("ERROR", "Número real mal formado (caractere inválido após ponto)", self.line, start_col))
-                            break
+                            return
                     has_dot = True
                 self._advance()
-            
+
             lexeme = self.code[start_pos:self.pos]
 
-            if has_dot:
-                if lexeme.endswith("."):
-                    lexeme += "0"
-                else:
-                    lexeme += "0" 
+            if self.pos == start_pos:
+                self.tokens.append(("ERROR", "Número mal formado", self.line, start_col))
+                return
+
+            # Verifica se o próximo caractere é aceitável
+            if self.pos < len(self.code) and not self.delimitador(self.code[self.pos]):
+                self.tokens.append(("ERROR", "Número mal formado (caractere após número)", self.line, start_col))
+                return
+
+            if has_dot and lexeme.endswith("."):
+                lexeme += "0"
 
             tipo = TIPO_TOKENS["NUMBER_REAL"] if has_dot else TIPO_TOKENS["NUMBER_INT"]
             self.tokens.append((tipo, lexeme, self.line, start_col))
+
 
 
     def _string(self):
