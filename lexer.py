@@ -123,7 +123,8 @@ class Lexer:
     
     # funcao para verificar se o proximo caractere é delimitador
     def delimitador(self, char):
-        return char in (" ", "\n", ";", ")", ",", ":")
+        # Inclui operadores como delimitadores válidos após números
+        return char in (" ", "\n", ";", ")", ",", ":", "+", "-", "*", "/", "=", "<", ">")
 
 
     def _numero(self):
@@ -191,6 +192,9 @@ class Lexer:
         else:
             has_dot = False
             while self.pos < len(self.code) and (self.code[self.pos].isdigit() or self.code[self.pos] == "."):
+                # Não consumir operadores como parte do número
+                if self.code[self.pos] in "+-*/=<>":
+                    break
                 if self.code[self.pos] == ".":
                     if has_dot:
                         self.tokens.append(("ERROR", "Número real mal formado (ponto duplo)", self.line, start_col))
