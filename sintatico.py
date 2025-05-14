@@ -1,3 +1,5 @@
+from token_types import TIPO_TOKENS
+
 class Sintatic:
     def __init__(self, tokens):
         """
@@ -6,6 +8,15 @@ class Sintatic:
         """
         self.tokens = tokens
         self.current_index = 0
+
+        # Cria dicionário inverso para mapear número do token para lexema
+        self.numero_para_lexema = {}
+        for categoria, mapeamento in TIPO_TOKENS.items():
+            if isinstance(mapeamento, dict):
+                for lexema, numero in mapeamento.items():
+                    self.numero_para_lexema[numero] = lexema
+            else:
+                self.numero_para_lexema[mapeamento] = categoria
 
     def token_atual(self):
         """
@@ -20,7 +31,6 @@ class Sintatic:
         """
         Consome o token atual se ele corresponder ao número esperado.
         Caso contrário, lança um erro de sintaxe.
-        :param numero_esperado: Número que representa o tipo esperado do token.
         """
         token = self.token_atual()
         if token:
@@ -31,9 +41,10 @@ class Sintatic:
                 print(f"Consumindo token: {numero_esperado}, Lexeme: {lexeme}")
                 self.current_index += 1
             else:
-                raise SyntaxError(f"Esperado '{numero_esperado}', mas encontrado '{tipo_token}' na linha {linha}, coluna {coluna}.")
+                lexema_esperado = self.numero_para_lexema.get(int(numero_esperado), str(numero_esperado))
+                raise SyntaxError(f"Esperado token '{lexema_esperado}', mas encontrado token '{lexeme}' na linha {linha}, coluna {coluna}.")
         else:
-            raise SyntaxError("Fim inesperado do arquivo.")
+            raise SyntaxError("Fim inesperado do arquivo ao analisar comando.")
 
     def analisar_funcao(self):
         """
@@ -165,7 +176,7 @@ class Sintatic:
                 self.analisar_chamada_proc()
                 self.consumir(29)  # ';'
         elif token_tipo == 15:  # if
-            self.analisar_ifStmt_sem_ponto_virgula()
+            self.analisar_ifStmt()
             # Não consome ponto e vírgula aqui para evitar conflito com else
         elif token_tipo == 7:  # begin (bloco)
             self.analisar_bloco()
@@ -180,8 +191,7 @@ class Sintatic:
         else:
             raise SyntaxError(f"Token inesperado '{token_lexema}' na linha {token[2]}, coluna {token[3]} ao analisar comando.")
 
-
-    def analisar_ifStmt_sem_ponto_virgula(self):
+    def analisar_ifStmt(self):
         """
         Analisa a produção <ifStmt> sem consumir ponto e vírgula no final.
         Usado para evitar conflito com else encadeado.
@@ -190,21 +200,8 @@ class Sintatic:
         self.analisar_expr()
         self.consumir(17)  # then
         self.analisar_stmt()
-        # Consome opcionalmente ';' antes do else
-        token = self.token_atual()
-        if token and int(token[0]) == 29:  # ';'
-            self.consumir(29)
+        # Removido consumo opcional de ';' antes do else para if e else não precisarem de ';'
         self.analisar_elsePart()
-
-    def analisar_ifStmt(self):
-        """
-        Analisa a produção <ifStmt> com consumo do ponto e vírgula no final.
-        """
-        self.analisar_ifStmt_sem_ponto_virgula()
-        # Consome ponto e vírgula opcional após o ifStmt
-        token = self.token_atual()
-        if token and int(token[0]) == 29:
-            self.consumir(29)
 
     def analisar_forStmt(self):
         """
@@ -353,7 +350,7 @@ class Sintatic:
             # Permitir else if sem ponto e vírgula entre eles
             token_seguinte = self.token_atual()
             if token_seguinte and int(token_seguinte[0]) == 15:  # if
-                self.analisar_ifStmt_sem_ponto_virgula()
+                self.analisar_ifStmt()
             else:
                 self.analisar_stmt()
         else:

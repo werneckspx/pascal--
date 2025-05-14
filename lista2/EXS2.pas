@@ -1,7 +1,5 @@
 program EXS2;
 
-uses crt;
-
 var n1,n2,media :real;
 
 begin;
@@ -38,12 +36,12 @@ begin;
  if (media >= 7) and (media <= 10) then
     begin
     writeln ("Voce foi aprovado!!!");
-    end
+    end;
 
-    else if (media < 7) and (media >= 4) then
+    else if(media < 7) and (media >= 4) then
             begin
             writeln ("Voce tera que fazer o exame.");
-            end
+            end;
 
             else if (media < 4) and (media >= 0) then
                     begin
