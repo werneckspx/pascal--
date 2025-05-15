@@ -65,11 +65,20 @@ class Sintatic:
         Analisa a produção <declarations>:
         'var' <declaration> <restoDeclaration>
         """
-        if self.token_atual() and int(self.token_atual()[0]) == 2:  # 'var' é representado pelo número 2
-            self.consumir(2)  # Consome 'var'
-            self.analisar_declaracao()
-            while self.token_atual() and int(self.token_atual()[0]) == 44:  # Identificadores são representados pelo número 44
-                self.analisar_declaracao()
+        #if self.token_atual() and int(self.token_atual()[0]) == 2:  # 'var' é representado pelo número 2
+        self.consumir(2)  # Consome 'var'
+        self.analisar_declaracao()
+        self.resto_declaration()
+        
+    def resto_declaration(self):
+        """
+        Analisa a produção <restoDeclaration>:
+        <declaration> <restoDeclaration> | & ;
+        """
+        #while self.token_atual() and int(self.token_atual()[0]) == 44:  # 'ident' é representado pelo número 44
+        self.analisar_declaracao()
+        if self.token_atual() and int(self.token_atual()[0]) != 7:    
+            self.resto_declaration()
 
     def analisar_declaracao(self):
         """
@@ -87,9 +96,18 @@ class Sintatic:
         'IDENTIFICADOR' <restoIdentList>
         """
         self.consumir(44)  # Consome um identificador
-        while self.token_atual() and int(self.token_atual()[0]) == 31:  # ',' é representado pelo número 31
-            self.consumir(31)  # Consome ','
-            self.consumir(44)  # Consome outro identificador
+        self.resto_lista_identificadores()
+        
+    def resto_lista_identificadores(self):
+        """
+        Analisa a produção <restoIdentList>:
+        ',' 'IDENTIFICADOR' <restoIdentList> | & ;
+        """
+        #while self.token_atual() and int(self.token_atual()[0]) == 31:  # ',' é representado pelo número 31
+        self.consumir(31)  # Consome ','
+        self.consumir(44)  # Consome outro identificador
+        if self.token_atual() and int(self.token_atual()[0]) != 34:  # ':' é representado pelo número 34 
+            self.resto_lista_identificadores()
 
     def analisar_tipo(self):
         """
