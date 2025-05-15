@@ -117,6 +117,13 @@ class Lexer:
             token_number = TIPO_TOKENS["PALAVRA-CHAVE"][lexeme_lower]
             self.tokens.append((token_number, lexeme, self.line, start_col))
             return
+        
+        # Verifica se é um operador aritmético textual (mod, div)
+        if lexeme_lower in TIPO_TOKENS["OPERADORES"]:
+            token_number = TIPO_TOKENS["OPERADORES"][lexeme_lower]
+            self.tokens.append((token_number, lexeme, self.line, start_col))
+            return
+
 
         # Caso contrário, trata como identificador
         self.tokens.append((TIPO_TOKENS["IDENTIFICADOR"], lexeme, self.line, start_col))

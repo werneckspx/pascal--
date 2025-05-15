@@ -1,12 +1,22 @@
 program teste;
 var
-  a: integer;
+  a, a_1: integer;
   b: real;
   c: string;
 begin
   a := 10;
   b := 20.5;
-  c := "texto";
+  
+  c := {a
+  m
+  e
+  m
+  }
+   "texto";
+
+  ;
+
+  a := (1 + 2) * (-3) - 4 / 2 mod 2 div 1;
 
   // Teste if-else com else if encadeado
   if a = 10 then
@@ -43,7 +53,7 @@ begin
 
   // Teste expressões com operadores lógicos e relacionais
   if (a > 5) and (b < 30) or not (a = 0) then
-    writeln("expressão lógica verdadeira");
+    writeln("expressao logica verdadeira");
 
   // Teste erros sintáticos (comentados para evitar erro de parse)
   // a 10; // erro: falta operador :=

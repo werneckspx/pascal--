@@ -13,15 +13,13 @@ def main():
         lexer = Lexer(source_code)
         tokens = lexer.tokenize()
 
-        print("=== TOKENS ===")
+        print("\n")
         has_lexical_error = False
         for token in tokens:
             if token[0] == "ERROR":
                 print(f"[ERRO] {token[1]} na linha {token[2]}, coluna {token[3]}")
                 has_lexical_error = True
                 break
-            else:
-                print(token)
         print("\n")
     except FileNotFoundError:
         print(f"[ERRO] Arquivo '{filename}' não encontrado.")

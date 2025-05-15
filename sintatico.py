@@ -11,6 +11,7 @@ class Sintatic:
 
         # Cria dicionário inverso para mapear número do token para lexema
         self.numero_para_lexema = {}
+
         for categoria, mapeamento in TIPO_TOKENS.items():
             if isinstance(mapeamento, dict):
                 for lexema, numero in mapeamento.items():
@@ -103,11 +104,12 @@ class Sintatic:
         Analisa a produção <restoIdentList>:
         ',' 'IDENTIFICADOR' <restoIdentList> | & ;
         """
-        #while self.token_atual() and int(self.token_atual()[0]) == 31:  # ',' é representado pelo número 31
-        self.consumir(31)  # Consome ','
-        self.consumir(44)  # Consome outro identificador
-        if self.token_atual() and int(self.token_atual()[0]) != 34:  # ':' é representado pelo número 34 
+        token = self.token_atual()
+        if token and int(token[0]) == 31:  # ','
+            self.consumir(31)
+            self.consumir(44)
             self.resto_lista_identificadores()
+        # senão, faz nada (vazio)
 
     def analisar_tipo(self):
         """
@@ -190,9 +192,14 @@ class Sintatic:
             if next_token and int(next_token[0]) == 28:  # ':='
                 self.analisar_atrib()
                 self.consumir(29)  # ';'
-            else:
+            elif next_token and int(next_token[0]) == 29:  # ';'
                 self.analisar_chamada_proc()
-                self.consumir(29)  # ';'
+                self.consumir(29)  # ';
+            else:
+                # Erro: identificador não seguido de ':=' ou ';'
+                linha = token[2]
+                coluna = token[3]
+                raise SyntaxError(f"Esperado ':=' ou ';' após identificador, mas encontrado '{next_token[1] if next_token else 'EOF'}' na linha {linha}, coluna {coluna}.")
         elif token_tipo == 15:  # if
             self.analisar_ifStmt()
             # Não consome ponto e vírgula aqui para evitar conflito com else
@@ -491,8 +498,15 @@ class Sintatic:
         | '-' <mult> <restoAdd> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {22, 23}:
+        if token and int(token[0]) in {22, 23}:  # '+' ou '-'
+            op_token = token
             self.consumir(int(token[0]))
+            next_token = self.token_atual()
+            # Verifica se o próximo token é outro operador binário (+, -, *, /, mod, div)
+            if next_token and int(next_token[0]) in {22, 23, 24, 25, 26, 27}:
+                raise SyntaxError(
+                    f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
+                )
             self.analisar_mult()
             self.analisar_restoAdd()
         else:
@@ -515,8 +529,15 @@ class Sintatic:
         |  'div' <uno> <restoMult> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {24, 25, 26, 27}:
+        if token and int(token[0]) in {24, 25, 26, 27}:  # '*', '/', 'mod', 'div'
+            op_token = token
             self.consumir(int(token[0]))
+            next_token = self.token_atual()
+            # Verifica se o próximo token é outro operador binário
+            if next_token and int(next_token[0]) in {22, 23, 24, 25, 26, 27}:
+                raise SyntaxError(
+                    f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
+                )
             self.analisar_uno()
             self.analisar_restoMult()
         else:
