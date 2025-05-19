@@ -1,8 +1,7 @@
 program exs2;
 
-uses crt;
-
 var n1,n2,n3,media,exame: real;
+      teste,tesdqwd: string;
 
 begin;
 
@@ -35,19 +34,19 @@ begin;
 
  //aqui coloca o comando para limpar a tela, e se faz a cadeia de ifs, onde so executara a media desejada.
 
-  if (media<=10) and (media >=7)
+  if (media=10) and (media >=7)
     then  begin
           writeln ("sua media aritimetica e ", media:4:2, " e voce foi aprovado");
-          end
+          end;
 
           else if (media< 7) and (media >=3)
                  then  begin
                        writeln ("sua media aritimetica e ", media:4:2, " voce deve tirar nota ", exame:4:2, " para ser aprovado");
-                       end
+                       end;
 
                        else if (media <3) and (media >=0)
                               then begin
-                                   writeln ("sua media aritimetica e ", media:4:2, " lamento meu caro mas voce foi reprovado estude mais para a proxima.")
+                                   writeln ("sua media aritimetica e ", media:4:2, " lamento meu caro mas voce foi reprovado estude mais para a proxima.");
                                    end;
 
 

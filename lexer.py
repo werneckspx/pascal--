@@ -23,14 +23,13 @@ class Lexer:
             elif current_char == '{':
                 self.comentario_multilinha()
             elif current_char.isalpha():
-                #self._logicos()
-                self._identificador_ou_palavrachave()
+                self._identificador_ou_palavrachave_ou_logico() # Aqui dentro analisa se pode ser operador Lógico também #
             elif current_char.isdigit():
                 self._numero()
             elif current_char == '"':
                 self._string()
-            elif current_char == "'":
-                self._char()
+            #elif current_char == "'":
+                #self._char()
             elif current_char.isdigit() or current_char in "$&":
                 self._numero()
             elif current_char == ">" or current_char == "<" or current_char == "=":
@@ -88,61 +87,52 @@ class Lexer:
         else:
             self.col += 1
         self.pos += 1
-    
-    def _logicos(self):
-        """Operadores logicos"""
-        start_col = self.col
-        start_pos = self.pos
-        
-        while self.pos < len(self.code) and self.code[self.pos].isalnum():
-            self._advance()
-        
-        lexeme = self.code[start_pos:self.pos]
-        
-        if lexeme in TIPO_TOKENS["LOGICOS"]:
-            self.tokens.append(("LOGICOS", lexeme, self.line, start_col))
-        else:
-            #pode dar prolema esse else de erro
-            self.tokens.append(("ERROR", f"Token desconhecido {lexeme}", self.line, start_col))
 
-    def _char(self):
-        """Tratamento de char"""
-        start_col = self.col
-        start_line = self.line
-        self._advance()
 
-        start_content = self.pos
-        while self.pos < len(self.code) and self.code[self.pos] != "'":
-            self._advance()
-
-        char_content = self.code[start_content:self.pos]
-
-        if len(char_content) == 1 and self.pos < len(self.code) and self.code[self.pos] == "'":
-            self._advance()
-            self.tokens.append(("CHAR", char_content, start_line, start_col))
-        else:
-            self.tokens.append(("ERROR", "Char mal formado: deve conter exatamente 1 caractere", start_line, start_col))
-            if self.pos < len(self.code) and self.code[self.pos] == "'":
-                self._advance()
-
-    def _identificador_ou_palavrachave(self):
-        """Tratamento de identificadores e palavras-chave"""
+    def _identificador_ou_palavrachave_ou_logico(self):
+        """Tratamento de identificadores, palavras-chave e operadores lógicos"""
         start_pos = self.pos
         start_col = self.col
+
+        # Avança enquanto for alfanumérico ou "_"
         while self.pos < len(self.code) and (self.code[self.pos].isalnum() or self.code[self.pos] == "_"):
             self._advance()
+
         lexeme = self.code[start_pos:self.pos]
+
+        # Verifica se o lexema não está vazio
+        if not lexeme:
+            return
+
         lexeme_lower = lexeme.lower()
+
+        # Verifica se é um operador lógico
+        if lexeme_lower in TIPO_TOKENS["LOGICOS"]:
+            token_number = TIPO_TOKENS["LOGICOS"][lexeme_lower]
+            self.tokens.append((token_number, lexeme, self.line, start_col))
+            return
+
+        # Verifica se é uma palavra-chave
         if lexeme_lower in TIPO_TOKENS["PALAVRA-CHAVE"]:
-            token_type = "PALAVRA-CHAVE"
-            token_name = lexeme
-        elif lexeme_lower in TIPO_TOKENS["OPERADORES"]:
-            token_type = TIPO_TOKENS["OPERADORES"][lexeme_lower]
-            token_name = lexeme
-        else:
-            token_type = "IDENTIFICADOR"
-            token_name = lexeme
-        self.tokens.append((token_type, token_name, self.line, start_col))
+            token_number = TIPO_TOKENS["PALAVRA-CHAVE"][lexeme_lower]
+            self.tokens.append((token_number, lexeme, self.line, start_col))
+            return
+        
+        # Verifica se é um operador aritmético textual (mod, div)
+        if lexeme_lower in TIPO_TOKENS["OPERADORES"]:
+            token_number = TIPO_TOKENS["OPERADORES"][lexeme_lower]
+            self.tokens.append((token_number, lexeme, self.line, start_col))
+            return
+
+
+        # Caso contrário, trata como identificador
+        self.tokens.append((TIPO_TOKENS["IDENTIFICADOR"], lexeme, self.line, start_col))
+    
+    # funcao para verificar se o proximo caractere é delimitador
+    def delimitador(self, char):
+        # Inclui operadores como delimitadores válidos após números
+        return char in (" ", "\n", ";", ")", ",", ":", "+", "-", "*", "/", "=", "<", ">")
+
 
     def _numero(self):
         """Tratamento de números"""
@@ -163,7 +153,7 @@ class Lexer:
             if self.pos == start_hex:
                 self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
             else:
-                self.tokens.append(("NUMERO_HEX", lexeme, self.line, start_col))
+                self.tokens.append((TIPO_TOKENS["NUMBER_HEX"], lexeme, self.line, start_col))
 
         #verifica hexadecimal "0x"
         elif self.code[self.pos] == '0' and self.pos + 1 < len(self.code) and self.code[self.pos + 1] in ['x', 'X']:
@@ -179,10 +169,11 @@ class Lexer:
             if self.pos == start_hex:
                 self.tokens.append(("ERROR", "Hexadecimal vazio", self.line, start_col))
             else:
-                self.tokens.append(("NUMBER_HEX", lexeme, self.line, start_col))
+                self.tokens.append((TIPO_TOKENS["NUMBER_HEX"], lexeme, self.line, start_col))
 
-        ## Verifica se o caractere é um dígito octal
-        elif (self.code[self.pos] == '&' or ((self.code[self.pos] == '0') and (self.code[self.pos+1] in "1234567" ))):
+        # Verifica se o caractere é um dígito octal
+        elif (self.code[self.pos] == '&' or (
+            self.code[self.pos] == '0' and self.pos + 1 < len(self.code) and self.code[self.pos + 1] in "1234567")):
             self._advance()
             start_octal = self.pos
             while self.pos < len(self.code) and self.code[self.pos].isdigit():
@@ -190,33 +181,59 @@ class Lexer:
                     self.tokens.append(("ERROR", "Octal mal formado", self.line, start_col))
                     return
                 self._advance()
+
             lexeme = self.code[start_pos:self.pos]
+
             if self.pos == start_octal:
                 self.tokens.append(("ERROR", "Octal vazio", self.line, start_col))
-            else:
-                self.tokens.append(("NUMERO_OCT", lexeme, self.line, start_col))
+                return
 
-        ## Verifica se o caractere é um dígito decimal
+            # Verifica se o próximo caractere é aceitável
+            if self.pos < len(self.code) and not self.delimitador(self.code[self.pos]):
+                self.tokens.append(("ERROR", "Octal mal formado (caractere após número)", self.line, start_col))
+                return
+
+            self.tokens.append((TIPO_TOKENS["NUMERO_OCT"], lexeme, self.line, start_col))
+
+        # Verifica se o caractere é um dígito decimal ou real
         else:
             has_dot = False
             while self.pos < len(self.code) and (self.code[self.pos].isdigit() or self.code[self.pos] == "."):
+                # Não consumir operadores como parte do número
+                if self.code[self.pos] in "+-*/=<>":
+                    break
                 if self.code[self.pos] == ".":
                     if has_dot:
                         self.tokens.append(("ERROR", "Número real mal formado (ponto duplo)", self.line, start_col))
-                        break
                         return
-                    if self.pos + 1 < len(self.code) and self.code[self.pos + 1] == ".":
-                        break
+                    if self.pos + 1 < len(self.code):
+                        next_char = self.code[self.pos + 1]
+                        if next_char == ".":
+                            break  # ponto duplo ".." é parte de outro token
+                        elif not (next_char.isdigit() or self.delimitador(next_char)):
+                            self.tokens.append(("ERROR", "Número real mal formado (caractere inválido após ponto)", self.line, start_col))
+                            return
                     has_dot = True
                 self._advance()
+
             lexeme = self.code[start_pos:self.pos]
-            if lexeme.endswith("."):
-                self.tokens.append(("ERROR", "Número real mal formado (ponto final)", self.line, start_col))
-            elif lexeme.count(".") > 1:
-                self.tokens.append(("ERROR", "Número mal formado com múltiplos pontos", self.line, start_col))
-            else:
-                tipo = "NUMERO_REAL" if has_dot else "NUMERO_INT"
-                self.tokens.append((tipo, lexeme, self.line, start_col))
+
+            if self.pos == start_pos:
+                self.tokens.append(("ERROR", "Número mal formado", self.line, start_col))
+                return
+
+            # Verifica se o próximo caractere é aceitável
+            if self.pos < len(self.code) and not self.delimitador(self.code[self.pos]):
+                self.tokens.append(("ERROR", "Número mal formado (caractere após número)", self.line, start_col))
+                return
+
+            if has_dot and lexeme.endswith("."):
+                lexeme += "0"
+
+            tipo = TIPO_TOKENS["NUMBER_REAL"] if has_dot else TIPO_TOKENS["NUMBER_INT"]
+            self.tokens.append((tipo, lexeme, self.line, start_col))
+
+
 
     def _string(self):
         """Tratamento das strings"""
@@ -236,7 +253,7 @@ class Lexer:
             if current_char == '"':
                 # Fecha a string
                 self._advance() 
-                self.tokens.append(("STRING", ''.join(lexeme), start_line, start_col))
+                self.tokens.append((TIPO_TOKENS["STRING"], ''.join(lexeme), start_line, start_col))
                 return
 
             if current_char == '\\':
@@ -274,13 +291,14 @@ class Lexer:
 
         # ==, <=, >=, <>
         if dois_char_op in TIPO_TOKENS["RELACIONAIS"]:
-            self.tokens.append((TIPO_TOKENS["RELACIONAIS"][dois_char_op], dois_char_op, self.line, start_col))
+            token_number = TIPO_TOKENS["RELACIONAIS"][dois_char_op]
+            self.tokens.append((token_number, dois_char_op, self.line, start_col))
             self._advance()
             self._advance()
         # =, <, >
         elif self.code[self.pos] in TIPO_TOKENS["RELACIONAIS"]:
-            op = self.code[self.pos]
-            self.tokens.append((TIPO_TOKENS["RELACIONAIS"][op], op, self.line, start_col))
+            token_number = TIPO_TOKENS["RELACIONAIS"][self.code[self.pos]]
+            self.tokens.append((token_number, self.code[self.pos], self.line, start_col))
             self._advance()
         # erro
         else:
@@ -294,14 +312,18 @@ class Lexer:
         ch = self.code[self.pos]
         two_char_op = self.code[self.pos:self.pos+2]
         if two_char_op in TIPO_TOKENS["OPERADORES"]:
-            self.tokens.append((TIPO_TOKENS["OPERADORES"][two_char_op], two_char_op, self.line, start_col))
+            token_number = TIPO_TOKENS["OPERADORES"][two_char_op]
+            self.tokens.append((token_number, two_char_op, self.line, start_col))
             self._advance()
             self._advance()
         elif ch in TIPO_TOKENS["OPERADORES"]:
-            self.tokens.append((TIPO_TOKENS["OPERADORES"][ch], ch, self.line, start_col))
+            token_number = TIPO_TOKENS["OPERADORES"][ch]
+            self.tokens.append((token_number, ch, self.line, start_col))
             self._advance()
         elif ch in TIPO_TOKENS["DELIMITADOR"]:
-            self.tokens.append((TIPO_TOKENS["DELIMITADOR"][ch], ch, self.line, start_col))
+            token_number = TIPO_TOKENS["DELIMITADOR"][ch]
+            self.tokens.append((token_number, ch, self.line, start_col))
             self._advance()
         else:
+            self.tokens.append(("ERROR", f"Caractere inválido '{ch}'", self.line, start_col))
             self._advance()
