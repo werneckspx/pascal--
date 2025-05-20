@@ -77,8 +77,9 @@ class Sintatic:
         <declaration> <restoDeclaration> | & ;
         """
         #while self.token_atual() and int(self.token_atual()[0]) == 44:  # 'ident' é representado pelo número 44
-        self.analisar_declaracao()
-        if self.token_atual() and int(self.token_atual()[0]) != 7:    
+        
+        if self.token_atual() and int(self.token_atual()[0]) != 7:   
+            self.analisar_declaracao() 
             self.resto_declaration()
 
     def analisar_declaracao(self):
