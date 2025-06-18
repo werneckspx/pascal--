@@ -3,6 +3,7 @@ var
   a, a_1: integer;
   b: real;
   c: string;
+  d: boolean;
 begin
   a := 10;
   b := 20.5;

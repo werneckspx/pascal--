@@ -1,5 +1,61 @@
 from token_types import TIPO_TOKENS
 
+# Dicionários de grupos de tokens para uso em vários lugares
+TOKENS_INICIO_STMT = {
+    TIPO_TOKENS["PALAVRA-CHAVE"]["for"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["write"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["read"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["readln"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["while"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["if"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["begin"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["break"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["continue"],
+    TIPO_TOKENS["DELIMITADOR"][";"],
+    TIPO_TOKENS["IDENTIFICADOR"]
+}
+
+TOKENS_TIPOS_DECLARACAO = {
+    TIPO_TOKENS["PALAVRA-CHAVE"]["integer"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["real"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["string"], 
+    TIPO_TOKENS["PALAVRA-CHAVE"]["boolean"]
+}
+
+
+TOKENS_IO = {
+    TIPO_TOKENS["PALAVRA-CHAVE"]["write"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["read"],
+    TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]
+}
+
+TOKENS_OPERADORES_BINARIOS = {
+    TIPO_TOKENS["OPERADORES"]["+"],
+    TIPO_TOKENS["OPERADORES"]["-"],
+    TIPO_TOKENS["OPERADORES"]["*"],
+    TIPO_TOKENS["OPERADORES"]["/"],
+    TIPO_TOKENS["OPERADORES"]["mod"],
+    TIPO_TOKENS["OPERADORES"]["div"]
+}
+
+TOKENS_NUMERICOS = {
+    TIPO_TOKENS["NUMBER_INT"],
+    TIPO_TOKENS["NUMBER_REAL"],
+    TIPO_TOKENS["NUMBER_HEX"],
+    TIPO_TOKENS["NUMERO_OCT"]
+}
+
+TOKENS_FATOR = {
+    TIPO_TOKENS["IDENTIFICADOR"],
+    TIPO_TOKENS["NUMBER_INT"],
+    TIPO_TOKENS["NUMBER_REAL"],
+    TIPO_TOKENS["NUMBER_HEX"],
+    TIPO_TOKENS["NUMERO_OCT"],
+    TIPO_TOKENS["STRING"]
+}
+
 class Sintatic:
     def __init__(self, tokens):
         """
@@ -38,11 +94,11 @@ class Sintatic:
             tipo_token, lexeme, linha, coluna = token
 
             # Verifica se o número do tipo do token corresponde ao esperado
-            if int(tipo_token) == int(numero_esperado):
+            if tipo_token == numero_esperado:
                 print(f"Consumindo token: {numero_esperado}, Lexeme: {lexeme}")
                 self.current_index += 1
             else:
-                lexema_esperado = self.numero_para_lexema.get(int(numero_esperado), str(numero_esperado))
+                lexema_esperado = self.numero_para_lexema.get(numero_esperado, numero_esperado) 
                 raise SyntaxError(f"Esperado token '{lexema_esperado}', mas encontrado token '{lexeme}' na linha {linha}, coluna {coluna}.")
         else:
             raise SyntaxError("Fim inesperado do arquivo ao analisar comando.")
@@ -52,22 +108,21 @@ class Sintatic:
         Analisa a produção <function*>:
         'program' 'IDENTIFICADOR' ';' <declarations> 'begin' <stmtList> 'end' '.'
         """
-        self.consumir(1)  # Consome 'program' (representado pelo número 1 no TIPO_TOKENS)
-        self.consumir(44)  # Consome o identificador do programa (representado pelo número 44)
-        self.consumir(29)  # Consome ';' (representado pelo número 29)
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["program"])  # Consome 'program'
+        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # Consome o identificador do programa
+        self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # Consome ';'
         self.analisar_declaracoes()
-        self.consumir(7)  # Consome 'begin' (representado pelo número 7)
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["begin"])  # Consome 'begin'
         self.analisar_lista_comandos()
-        self.consumir(8)  # Consome 'end' (representado pelo número 8)
-        self.consumir(30)  # Consome '.' (representado pelo número 30)
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["end"])  # Consome 'end'
+        self.consumir(TIPO_TOKENS["DELIMITADOR"]["."])  # Consome '.'
 
     def analisar_declaracoes(self):
         """
         Analisa a produção <declarations>:
         'var' <declaration> <restoDeclaration>
         """
-        #if self.token_atual() and int(self.token_atual()[0]) == 2:  # 'var' é representado pelo número 2
-        self.consumir(2)  # Consome 'var'
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["var"])  # Consome 'var'
         self.analisar_declaracao()
         self.resto_declaration()
         
@@ -76,9 +131,8 @@ class Sintatic:
         Analisa a produção <restoDeclaration>:
         <declaration> <restoDeclaration> | & ;
         """
-        #while self.token_atual() and int(self.token_atual()[0]) == 44:  # 'ident' é representado pelo número 44
         self.analisar_declaracao()
-        if self.token_atual() and int(self.token_atual()[0]) != 7:    
+        if self.token_atual() and int(self.token_atual()[0]) != TIPO_TOKENS["PALAVRA-CHAVE"]["begin"]:    
             self.resto_declaration()
 
     def analisar_declaracao(self):
@@ -87,16 +141,16 @@ class Sintatic:
         <listaIdent> ':' <type> ';'
         """
         self.analisar_lista_identificadores()
-        self.consumir(34)  # Consome ':' (representado pelo número 34)
+        self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])  # Consome ':'
         self.analisar_tipo()
-        self.consumir(29)  # Consome ';' (representado pelo número 29)
+        self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # Consome ';'
 
     def analisar_lista_identificadores(self):
         """
         Analisa a produção <listaIdent>:
         'IDENTIFICADOR' <restoIdentList>
         """
-        self.consumir(44)  # Consome um identificador
+        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # Consome um identificador
         self.resto_lista_identificadores()
         
     def resto_lista_identificadores(self):
@@ -105,19 +159,19 @@ class Sintatic:
         ',' 'IDENTIFICADOR' <restoIdentList> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) == 31:  # ','
-            self.consumir(31)
-            self.consumir(44)
+        if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][","]:  # ','
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][","])
+            self.consumir(TIPO_TOKENS["IDENTIFICADOR"])
             self.resto_lista_identificadores()
         # senão, faz nada (vazio)
 
     def analisar_tipo(self):
         """
         Analisa a produção <type>:
-        'integer' | 'real' | 'string'   
+        'integer' | 'real' | 'string' | 'boolean'
         """
         token = self.token_atual()
-        if token and int(token[0]) in [3, 4, 5]:  # 'integer', 'real', 'string' são representados pelos números 3, 4 e 5
+        if token and int(token[0]) in  TOKENS_TIPOS_DECLARACAO:
             self.consumir(int(token[0]))
         else:
             raise SyntaxError(f"Tipo inválido encontrado: '{token[1]}'.")
@@ -136,27 +190,10 @@ class Sintatic:
         token_tipo = int(token[0])
         token_lexema = token[1].lower()
 
-        # Mapear os tokens que iniciam stmt
-        tokens_inicio_stmt = {
-            9,  # for
-            18, # write
-            19, # writeln
-            20, # read
-            21, # readln
-            11, # while
-            15, # if
-            7,  # begin
-            13, # break
-            14, # continue
-            29, # ;
-            44   # identificador
-        }
-
-        if token_tipo in tokens_inicio_stmt:
+        if token_tipo in TOKENS_INICIO_STMT:
             self.analisar_stmt()
             self.analisar_lista_comandos()
         else:
-            # Não é um token que inicia stmt, lista vazia
             return
 
     def analisar_stmt(self):
@@ -180,39 +217,39 @@ class Sintatic:
         token_tipo = int(token[0])
         token_lexema = token[1].lower()
 
-        if token_tipo == 9:  # for
+        if token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["for"]:  # for
             self.analisar_forStmt()
-        elif token_tipo in {18, 19, 20, 21}:  # ioStmt
+        elif token_tipo in TOKENS_IO:  # ioStmt
             self.analisar_ioStmt()
-        elif token_tipo == 11:  # while
+        elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["while"]:  # while
             self.analisar_whileStmt()
-        elif token_tipo == 44:  # identificador (atrib ou chamada_proc)
+        elif token_tipo ==  TIPO_TOKENS["IDENTIFICADOR"]:  # identificador (atrib ou chamada_proc)
             # Verifica se é atribuição ou chamada de procedimento
             next_token = self.tokens[self.current_index + 1] if self.current_index + 1 < len(self.tokens) else None
-            if next_token and int(next_token[0]) == 28:  # ':='
+            if next_token and int(next_token[0]) ==  TIPO_TOKENS["OPERADORES"][":="]:  # ':='
                 self.analisar_atrib()
-                self.consumir(29)  # ';'
-            elif next_token and int(next_token[0]) == 29:  # ';'
+                self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
+            elif next_token and int(next_token[0]) == TIPO_TOKENS["DELIMITADOR"][";"]:  # ';'
                 self.analisar_chamada_proc()
-                self.consumir(29)  # ';
+                self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';
             else:
                 # Erro: identificador não seguido de ':=' ou ';'
                 linha = token[2]
                 coluna = token[3]
                 raise SyntaxError(f"Esperado ':=' ou ';' após identificador, mas encontrado '{next_token[1] if next_token else 'EOF'}' na linha {linha}, coluna {coluna}.")
-        elif token_tipo == 15:  # if
+        elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["if"]:  # if
             self.analisar_ifStmt()
             # Não consome ponto e vírgula aqui para evitar conflito com else
-        elif token_tipo == 7:  # begin (bloco)
+        elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["begin"]:  # begin (bloco)
             self.analisar_bloco()
-        elif token_tipo == 13:  # break
-            self.consumir(13)
-            self.consumir(29)
-        elif token_tipo == 14:  # continue
-            self.consumir(14)
-            self.consumir(29)
-        elif token_tipo == 29:  # ';'
-            self.consumir(29)
+        elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["break"]:  # break
+            self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["break"])
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
+        elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["continue"]:  # continue
+            self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["continue"])
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
+        elif token_tipo == TIPO_TOKENS["DELIMITADOR"][";"]:  # ';'
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         else:
             raise SyntaxError(f"Token inesperado '{token_lexema}' na linha {token[2]}, coluna {token[3]} ao analisar comando.")
 
@@ -221,9 +258,9 @@ class Sintatic:
         Analisa a produção <ifStmt> sem consumir ponto e vírgula no final.
         Usado para evitar conflito com else encadeado.
         """
-        self.consumir(15)  # if
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["if"])  # if
         self.analisar_expr()
-        self.consumir(17)  # then
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["then"])  # then
         self.analisar_stmt()
         # Removido consumo opcional de ';' antes do else para if e else não precisarem de ';'
         self.analisar_elsePart()
@@ -233,17 +270,17 @@ class Sintatic:
         Analisa a produção <forStmt>:
         'for' <atrib> 'to' <endFor> 'do' <stmt> ;
         """
-        self.consumir(9)  # for
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["for"])  # for
         self.analisar_atrib()
-        self.consumir(10)  # to
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["to"])  # to
         token = self.token_atual()
         if token is None:
             raise SyntaxError("Fim inesperado do arquivo ao analisar endFor.")
-        if int(token[0]) == 44 or int(token[0]) == 45:  # IDENT ou NUMint
+        if int(token[0]) == TIPO_TOKENS["IDENTIFICADOR"] or int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # IDENT ou NUMint
             self.consumir(int(token[0]))
         else:
             raise SyntaxError(f"Esperado IDENT ou NUMint em endFor, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
-        self.consumir(12)  # do
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
         self.analisar_stmt()
 
     def analisar_ioStmt(self):
@@ -260,18 +297,18 @@ class Sintatic:
 
         token_tipo = int(token[0])
 
-        if token_tipo in {20, 21}:  # read ou readln
+        if token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["read"], TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]}:  # read ou readln
             self.consumir(token_tipo)
-            self.consumir(32)  # '('
-            self.consumir(44)  # IDENT
-            self.consumir(33)  # ')'
-            self.consumir(29)  # ';'
-        elif token_tipo in {18, 19}:  # write ou writeln
+            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])  # '('
+            self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])  # ')'
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
+        elif token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["write"], TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"]}:  # write ou writeln
             self.consumir(token_tipo)
-            self.consumir(32)  # '('
+            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])  # '('
             self.analisar_outList()
-            self.consumir(33)  # ')'
-            self.consumir(29)  # ';'
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])  # ')'
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
         else:
             raise SyntaxError(f"Esperado comando de IO, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
 
@@ -289,8 +326,8 @@ class Sintatic:
         ',' <outList> | &
         """
         token = self.token_atual()
-        if token and int(token[0]) == 31:  # ','
-            self.consumir(31)
+        if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][","]:  # ','
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][","])
             self.analisar_outList()
         else:
             return
@@ -305,40 +342,40 @@ class Sintatic:
             raise SyntaxError("Fim inesperado do arquivo ao analisar out.")
 
         token_tipo = int(token[0])
-        if token_tipo == 49:  # STR
-            self.consumir(49)
-        elif token_tipo == 44:  # IDENT
-            self.consumir(44)
+        if token_tipo == TIPO_TOKENS["STRING"]:  # STR
+            self.consumir(TIPO_TOKENS["STRING"])
+        elif token_tipo == TIPO_TOKENS["IDENTIFICADOR"]:  # IDENT
+            self.consumir(TIPO_TOKENS["IDENTIFICADOR"])
             # Verifica se há formatação :NUMint[:NUMint]
             token = self.token_atual()
-            if token and int(token[0]) == 34:  # ':'
-                self.consumir(34)
+            if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
                 token = self.token_atual()
-                if token and int(token[0]) == 45:  # NUMint
-                    self.consumir(45)
+                if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                    self.consumir(TIPO_TOKENS["NUMBER_INT"])
                     token = self.token_atual()
-                    if token and int(token[0]) == 34:  # ':'
-                        self.consumir(34)
+                    if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                        self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
                         token = self.token_atual()
-                        if token and int(token[0]) == 45:  # NUMint
-                            self.consumir(45)
-        elif token_tipo == 45:  # NUMint
-            self.consumir(45)
+                        if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                            self.consumir(TIPO_TOKENS["NUMBER_INT"])
+        elif token_tipo == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+            self.consumir(TIPO_TOKENS["NUMBER_INT"])
             # Verifica se há formatação :NUMint[:NUMint]
             token = self.token_atual()
-            if token and int(token[0]) == 34:  # ':'
-                self.consumir(34)
+            if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
                 token = self.token_atual()
-                if token and int(token[0]) == 45:  # NUMint
-                    self.consumir(45)
+                if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                    self.consumir(TIPO_TOKENS["NUMBER_INT"])
                     token = self.token_atual()
-                    if token and int(token[0]) == 34:  # ':'
-                        self.consumir(34)
+                    if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                        self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
                         token = self.token_atual()
-                        if token and int(token[0]) == 45:  # NUMint
-                            self.consumir(45)
-        elif token_tipo == 46:  # NUMfloat
-            self.consumir(46)
+                        if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                            self.consumir(TIPO_TOKENS["NUMBER_INT"])
+        elif token_tipo == TIPO_TOKENS["NUMBER_REAL"]:  # NUMfloat
+            self.consumir(TIPO_TOKENS["NUMBER_REAL"])
         else:
             raise SyntaxError(f"Esperado STR, IDENT, NUMint ou NUMfloat, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
 
@@ -347,9 +384,9 @@ class Sintatic:
         Analisa a produção <whileStmt>:
         'while' <expr> 'do' <stmt> ;
         """
-        self.consumir(11)  # while
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["while"])  # while
         self.analisar_expr()
-        self.consumir(12)  # do
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
         self.analisar_stmt()
 
     def analisar_ifStmt(self):
@@ -357,9 +394,9 @@ class Sintatic:
         Analisa a produção <ifStmt>:
         'if' <expr> 'then' <stmt> [ ';' ] <elsePart> ;
         """
-        self.consumir(15)  # if
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["if"])  # if
         self.analisar_expr()
-        self.consumir(17)  # then
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["then"])  # then
         self.analisar_stmt()
         # Removido consumo opcional de ';' após ifStmt para evitar conflito com else
         self.analisar_elsePart()
@@ -370,11 +407,11 @@ class Sintatic:
         'else' <stmt> | &
         """
         token = self.token_atual()
-        if token and int(token[0]) == 16:  # else
-            self.consumir(16)
+        if token and int(token[0]) == TIPO_TOKENS["PALAVRA-CHAVE"]["else"]:  # else
+            self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["else"])
             # Permitir else if sem ponto e vírgula entre eles
             token_seguinte = self.token_atual()
-            if token_seguinte and int(token_seguinte[0]) == 15:  # if
+            if token_seguinte and int(token_seguinte[0]) == TIPO_TOKENS["PALAVRA-CHAVE"]["if"]:  # if
                 self.analisar_ifStmt()
             else:
                 self.analisar_stmt()
@@ -386,18 +423,18 @@ class Sintatic:
         Analisa a produção <bloco>:
         'begin' <stmtList> 'end' ';' ;
         """
-        self.consumir(7)  # begin
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["begin"])  # begin
         self.analisar_lista_comandos()
-        self.consumir(8)  # end
-        self.consumir(29)  # ';'
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["end"])  # end
+        self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
 
     def analisar_atrib(self):
         """
         Analisa a produção <atrib>:
         'IDENT' ':=' <expr> ;
         """
-        self.consumir(44)  # IDENT
-        self.consumir(28)  # ':='
+        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT
+        self.consumir(TIPO_TOKENS["OPERADORES"][":="])  # ':='
         self.analisar_expr()
 
     def analisar_expr(self):
@@ -421,8 +458,8 @@ class Sintatic:
         'or' <and> <restoOr> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) == 35:  # or
-            self.consumir(35)
+        if token and int(token[0]) == TIPO_TOKENS["LOGICOS"]["or"]:  # or
+            self.consumir(TIPO_TOKENS["LOGICOS"]["or"])
             self.analisar_and()
             self.analisar_restoOr()
         else:
@@ -442,8 +479,8 @@ class Sintatic:
         'and' <not> <restoAnd> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) == 36:  # and
-            self.consumir(36)
+        if token and int(token[0]) == TIPO_TOKENS["LOGICOS"]["and"]:  # and
+            self.consumir(TIPO_TOKENS["LOGICOS"]["and"])
             self.analisar_not()
             self.analisar_restoAnd()
         else:
@@ -455,8 +492,8 @@ class Sintatic:
         'not' <not> | <rel> ;
         """
         token = self.token_atual()
-        if token and int(token[0]) == 37:  # not
-            self.consumir(37)
+        if token and int(token[0]) == TIPO_TOKENS["LOGICOS"]["not"]:  # not
+            self.consumir(TIPO_TOKENS["LOGICOS"]["not"])
             self.analisar_not()
         else:
             self.analisar_rel()
@@ -477,7 +514,7 @@ class Sintatic:
                 | '>' <add> | '>=' <add> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {38, 39, 40, 42, 41, 43}:
+        if token and int(token[0]) in {TIPO_TOKENS["RELACIONAIS"]["=="], TIPO_TOKENS["RELACIONAIS"]["<>"], TIPO_TOKENS["RELACIONAIS"]["<"], TIPO_TOKENS["RELACIONAIS"]["<="], TIPO_TOKENS["RELACIONAIS"][">"], TIPO_TOKENS["RELACIONAIS"][">="]}:
             self.consumir(int(token[0]))
             self.analisar_add()
         else:
@@ -498,12 +535,12 @@ class Sintatic:
         | '-' <mult> <restoAdd> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {22, 23}:  # '+' ou '-'
+        if token and int(token[0]) in {TIPO_TOKENS["OPERADORES"]["+"], TIPO_TOKENS["OPERADORES"]["-"]}:  # '+' ou '-'
             op_token = token
             self.consumir(int(token[0]))
             next_token = self.token_atual()
             # Verifica se o próximo token é outro operador binário (+, -, *, /, mod, div)
-            if next_token and int(next_token[0]) in {22, 23, 24, 25, 26, 27}:
+            if next_token and int(next_token[0]) in TOKENS_OPERADORES_BINARIOS:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
@@ -529,12 +566,12 @@ class Sintatic:
         |  'div' <uno> <restoMult> | & ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {24, 25, 26, 27}:  # '*', '/', 'mod', 'div'
+        if token and int(token[0]) in  {TIPO_TOKENS["OPERADORES"]["*"], TIPO_TOKENS["OPERADORES"]["/"], TIPO_TOKENS["OPERADORES"]["mod"], TIPO_TOKENS["OPERADORES"]["div"]}:  # '*', '/', 'mod', 'div'
             op_token = token
             self.consumir(int(token[0]))
             next_token = self.token_atual()
             # Verifica se o próximo token é outro operador binário
-            if next_token and int(next_token[0]) in {22, 23, 24, 25, 26, 27}:
+            if next_token and int(next_token[0]) in TOKENS_OPERADORES_BINARIOS:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
@@ -549,7 +586,7 @@ class Sintatic:
         '+' <uno> | '-' <uno> | <fator> ;
         """
         token = self.token_atual()
-        if token and int(token[0]) in {22, 23}:
+        if token and int(token[0]) in {TIPO_TOKENS["OPERADORES"]["+"], TIPO_TOKENS["OPERADORES"]["-"]}:
             self.consumir(int(token[0]))
             self.analisar_uno()
         else:
@@ -566,12 +603,12 @@ class Sintatic:
             raise SyntaxError("Fim inesperado do arquivo ao analisar fator.")
 
         token_tipo = int(token[0])
-        if token_tipo in {45, 46, 44, 49}:
+        if token_tipo in TOKENS_FATOR:
             self.consumir(token_tipo)
-        elif token_tipo == 32:  # '('
-            self.consumir(32)
+        elif token_tipo == TIPO_TOKENS["DELIMITADOR"]["("]:  # '('
+            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
             self.analisar_expr()
-            self.consumir(33)
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
         else:
             raise SyntaxError(f"Token inesperado '{token[1]}' na linha {token[2]}, coluna {token[3]} ao analisar fator.")
 
@@ -587,4 +624,4 @@ class Sintatic:
         Analisa uma chamada de procedimento simples:
         'IDENT' ';'
         """
-        self.consumir(44)  # IDENT
+        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT
