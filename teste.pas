@@ -7,15 +7,6 @@ var
 begin
   a := 10;
   b := 20.5;
-  
-  c := {a
-  m
-  e
-  m
-  }
-   "texto";
-
-  ;
 
   a := (1 + 2) * (-3) - 4 / 2 mod 2 div 1;
 

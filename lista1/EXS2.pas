@@ -34,7 +34,7 @@ begin;
 
  //aqui coloca o comando para limpar a tela, e se faz a cadeia de ifs, onde so executara a media desejada.
 
-  if (media=10) and (media >=7)
+  if (media==10) and (media >=7)
     then  begin
           writeln ("sua media aritimetica e ", media:4:2, " e voce foi aprovado");
           end;

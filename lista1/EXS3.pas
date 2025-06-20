@@ -1,9 +1,7 @@
 program exs3;
 
-uses crt;
-
 var n1,n2: real;
-
+  
 begin;
 
  clrscr;
@@ -24,17 +22,17 @@ begin;
  //ent�o so resta digitar os comandos para cada caso.
 
  clrscr;
- if n1 > n2
+ if n1 > n2;
    then   begin
           writeln ("o numero maior e , ", n1:4:2, ".");
           end
 
-         else if (n1 < n2)
+          if (n1 < n2);
                 then  begin
                       writeln ("o numero maior e , ", n2:4:2, ".");
                       end
 
-                   else if (n1=n2)
+                     if (n1=n2);
                           then begin
                                writeln ("os dois numeros sao iguais.");
                                end;
