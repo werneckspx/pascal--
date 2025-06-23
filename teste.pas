@@ -17,18 +17,60 @@ begin
     writeln("b eh maior que 10");
   else
     writeln("nenhuma condição satisfeita");
+  
+  if a < b then
+    if c > d then
+      x := 1;
+    else
+      x := 2;
+  else
+    x := 3;
+  
+  //Teste while
+  while i < 10 do
+    i := i + 1;
 
-  // Teste for
-  for a := 1 to 5 do
-    writeln(a);
-
-  // Teste while
+  //Teste while com break 
   while a < 10 do
   begin
     a := a + 1;
     if a = 7 then
       break;
   end;
+
+  //Teste while com continue 
+  while a < 10 do
+  begin
+    a := a + 1;
+    if a = 7 then
+      continue;
+  end;
+
+  //Teste while com if e continue
+  while a < 10 do
+  begin
+    if a = 7 then
+      continue;
+    if c > d then
+      x := 1;
+    else
+      x := 2;
+  end;
+
+  //Teste while com if e break
+  while a < 10 do
+  begin
+    if a = 7 then
+      break;
+    if c > d then
+      x := 1;
+    else
+      x := 2;
+  end;
+
+  // Teste for
+  for a := 1 to 5 do
+    writeln(a);
 
   // Teste break e continue
   for b := 1 to 10 do
@@ -54,3 +96,7 @@ begin
   // while do writeln(a); // erro: falta expressão no while
   // writeln("teste" // erro: falta parêntese fechando
 end.
+
+
+
+

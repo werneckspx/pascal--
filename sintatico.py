@@ -113,7 +113,7 @@ class Sintatic:
 
             # Verifica se o número do tipo do token corresponde ao esperado
             if tipo_token == numero_esperado:
-                print(f"Consumindo token: {numero_esperado}, Lexeme: {lexeme}")
+                #print(f"Consumindo token: {numero_esperado}, Lexeme: {lexeme}")
                 self.current_index += 1
             else:
                 lexema_esperado = self.numero_para_lexema.get(numero_esperado, numero_esperado) 
@@ -271,6 +271,12 @@ class Sintatic:
             self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["break"])
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["continue"]:  # continue
+            if not self.pilha_labels_fim_laco or len(self.pilha_labels_fim_laco) < 2:
+                raise SyntaxError("Comando 'continue' fora de laço não permitido.")
+            label_inicio = self.pilha_labels_fim_laco[-2]  # Usar o label do início do laço para continue
+            if label_inicio is None:
+                raise SyntaxError("Label de início do laço não encontrado para comando 'continue'.")
+            self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
             self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["continue"])
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         elif token_tipo == TIPO_TOKENS["DELIMITADOR"][";"]:  # ';'
@@ -419,7 +425,8 @@ class Sintatic:
         label_verdadeiro = self.gerador_aux.novo_label()
         label_falso = self.gerador_aux.novo_label()
 
-        # empilha o label de fim do laço
+        # empilha o label de início e fim do laço para controle de break e continue
+        self.pilha_labels_fim_laco.append(label_inicio)
         self.pilha_labels_fim_laco.append(label_falso)
 
         # label do início do loop
@@ -443,7 +450,8 @@ class Sintatic:
         # label para o bloco falso (fim do loop)
         self.codigos_intermediarios.append(('Label', label_falso, None, None))
 
-        # desempilha o label de fim do laço após o laço
+        # desempilha os labels de início e fim do laço após o laço
+        self.pilha_labels_fim_laco.pop()
         self.pilha_labels_fim_laco.pop()
 
     def analisar_ifStmt(self):
