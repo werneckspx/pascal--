@@ -81,6 +81,7 @@ class Sintatic:
         self.current_index = 0
         self.gerador_aux = GeradorAux()  # Inicializa o gerador auxiliar
         self.codigos_intermediarios = []  # Lista para armazenar os códigos intermediários
+        self.pilha_labels_fim_laco = []  # Pilha para armazenar labels de fim de laço para break
         
         # Cria dicionário inverso para mapear número do token para lexema
         self.numero_para_lexema = {}
@@ -263,6 +264,10 @@ class Sintatic:
         elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["begin"]:  # begin (bloco)
             self.analisar_bloco()
         elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["break"]:  # break
+            if not self.pilha_labels_fim_laco:
+                raise SyntaxError("Comando 'break' fora de laço não permitido.")
+            label_fim = self.pilha_labels_fim_laco[-1]
+            self.codigos_intermediarios.append(('Jump', label_fim, None, None))
             self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["break"])
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         elif token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["continue"]:  # continue
@@ -272,21 +277,6 @@ class Sintatic:
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         else:
             raise SyntaxError(f"Token inesperado '{token_lexema}' na linha {token[2]}, coluna {token[3]} ao analisar comando.")
-
-    def analisar_ifStmt(self):
-        """
-        Analisa a produção <ifStmt> sem consumir ponto e vírgula no final.
-        Usado para evitar conflito com else encadeado.
-        """
-        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["if"])  # if
-        resultado, codigos = self.analisar_expr()
-        self.codigos_intermediarios.extend(codigos)
-        #resultado para gerar saltos
-        
-        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["then"])  # then
-        self.analisar_stmt()
-        # Removido consumo opcional de ';' antes do else para if e else não precisarem de ';'
-        self.analisar_elsePart()
 
     def analisar_forStmt(self):
         """
@@ -424,12 +414,37 @@ class Sintatic:
         'while' <expr> 'do' <stmt> ;
         """
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["while"])  # while
+
+        label_inicio = self.gerador_aux.novo_label()
+        label_verdadeiro = self.gerador_aux.novo_label()
+        label_falso = self.gerador_aux.novo_label()
+
+        # empilha o label de fim do laço
+        self.pilha_labels_fim_laco.append(label_falso)
+
+        # label do início do loop
+        self.codigos_intermediarios.append(('Label', label_inicio, None, None))
+
         resultado, codigos = self.analisar_expr()
         self.codigos_intermediarios.extend(codigos)
-        # resultado para gerar saltos
-        
+
+        # salto condicional baseado na expressão
+        self.codigos_intermediarios.append(('If', resultado, label_verdadeiro, label_falso))
+
+        # label para o bloco verdadeiro (corpo do while)
+        self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
+
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
         self.analisar_stmt()
+
+        # salto incondicional para o início do loop
+        self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
+
+        # label para o bloco falso (fim do loop)
+        self.codigos_intermediarios.append(('Label', label_falso, None, None))
+
+        # desempilha o label de fim do laço após o laço
+        self.pilha_labels_fim_laco.pop()
 
     def analisar_ifStmt(self):
         """
@@ -439,12 +454,26 @@ class Sintatic:
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["if"])  # if
         resultado, codigos = self.analisar_expr()
         self.codigos_intermediarios.extend(codigos)
-        # resultado para gerar saltos
+        temp_cond = resultado
+        label_true = self.gerador_aux.novo_label()
+        label_false = self.gerador_aux.novo_label()
+        label_fim = self.gerador_aux.novo_label()
+        # gera código intermediário para o salto condicional
+        self.codigos_intermediarios.append(('If', temp_cond, label_true, label_false))
         
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["then"])  # then
+        
+        # label para o bloco verdadeiro
+        self.codigos_intermediarios.append(('Label', label_true, None, None))
         self.analisar_stmt()
-        # Removido consumo opcional de ';' após ifStmt para evitar conflito com else
+        # salto incondicional para o fim do if para pular o else
+        self.codigos_intermediarios.append(('Jump', label_fim, None, None))
+        
+        # label para o bloco falso (else)
+        self.codigos_intermediarios.append(('Label', label_false, None, None))
         self.analisar_elsePart()
+        # label para o fim do if-else
+        self.codigos_intermediarios.append(('Label', label_fim, None, None))
 
     def analisar_elsePart(self):
         """
