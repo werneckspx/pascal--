@@ -6,7 +6,9 @@ var
   d: boolean;
 begin
 {
-  a := (1 + 2) * (-3) - 4 / 2 mod 2 div 1;
+  a := (1 + 2);
+
+  e: real;
 
   // Teste if-else com else if encadeado
   if a = 10 then
