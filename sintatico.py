@@ -289,18 +289,59 @@ class Sintatic:
         Analisa a produção <forStmt>:
         'for' <atrib> 'to' <endFor> 'do' <stmt> ;
         """
-        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["for"])  # for
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["for"]) 
         self.analisar_atrib()
-        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["to"])  # to
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["to"])
+
         token = self.token_atual()
         if token is None:
-            raise SyntaxError("Fim inesperado do arquivo ao analisar endFor.")
-        if int(token[0]) == TIPO_TOKENS["IDENTIFICADOR"] or int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # IDENT ou NUMint
+            raise SyntaxError("Fim inesperado do arquivo ao analisar endFor")
+        if int(token[0]) == TIPO_TOKENS["IDENTIFICADOR"] or int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:
+            limite_final = token[1]
             self.consumir(int(token[0]))
         else:
             raise SyntaxError(f"Esperado IDENT ou NUMint em endFor, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
-        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
+        self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])
+
+        
+        label_inicio = self.gerador_aux.novo_label()
+        label_verdadeiro = self.gerador_aux.novo_label()
+        label_falso = self.gerador_aux.novo_label()
+
+        # empilha labels para controle de break e continue
+        self.pilha_labels_fim_laco.append(label_falso)
+        self.pilha_labels_fim_laco.append(label_inicio)
+
+        self.codigos_intermediarios.append(('Label', label_inicio, None, None))
+
+        # gera código para condição do laço: variável < limite_final
+        # supondo que a variável do for é o identificador da atribuição inicial
+        var_for = self.tokens[self.current_index - 4][1] 
+        temp_cond = self.gerador_aux.nova_temp()
+        self.codigos_intermediarios.append(('<', temp_cond, var_for, limite_final))
+
+        # salto condicional para corpo do laço ou fim do laço
+        self.codigos_intermediarios.append(('If', temp_cond, label_verdadeiro, label_falso))
+
+        # label para corpo do laço
+        self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
+
         self.analisar_stmt()
+
+        # incrementa a variável do for
+        temp_inc = self.gerador_aux.nova_temp()
+        self.codigos_intermediarios.append(('add', temp_inc, var_for, '1'))
+        self.codigos_intermediarios.append(('att', var_for, temp_inc, None))
+
+        # salto incondicional para início do laço
+        self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
+
+        # label para fim do laço
+        self.codigos_intermediarios.append(('Label', label_falso, None, None))
+
+        self.pilha_labels_fim_laco.pop()
+        self.pilha_labels_fim_laco.pop()
+
 
     def analisar_ioStmt(self):
         """
@@ -431,7 +472,6 @@ class Sintatic:
 
         # label do início do loop
         self.codigos_intermediarios.append(('Label', label_inicio, None, None))
-
         resultado, codigos = self.analisar_expr()
         self.codigos_intermediarios.extend(codigos)
 
@@ -440,7 +480,6 @@ class Sintatic:
 
         # label para o bloco verdadeiro (corpo do while)
         self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
-
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
         self.analisar_stmt()
 
@@ -466,9 +505,8 @@ class Sintatic:
         label_true = self.gerador_aux.novo_label()
         label_false = self.gerador_aux.novo_label()
         label_fim = self.gerador_aux.novo_label()
-        # gera código intermediário para o salto condicional
-        self.codigos_intermediarios.append(('If', temp_cond, label_true, label_false))
         
+        self.codigos_intermediarios.append(('If', temp_cond, label_true, label_false))
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["then"])  # then
         
         # label para o bloco verdadeiro

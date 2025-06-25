@@ -5,9 +5,7 @@ var
   c: string;
   d: boolean;
 begin
-  a := 10;
-  b := 20.5;
-
+{
   a := (1 + 2) * (-3) - 4 / 2 mod 2 div 1;
 
   // Teste if-else com else if encadeado
@@ -68,10 +66,6 @@ begin
       x := 2;
   end;
 
-  // Teste for
-  for a := 1 to 5 do
-    writeln(a);
-
   // Teste break e continue
   for b := 1 to 10 do
   begin
@@ -79,11 +73,6 @@ begin
       continue;
     writeln(b);
   end;
-
-  // Teste chamadas de procedimento simples
-  clrscr;
-  readln(a);
-  writeln(c);
 
   // Teste expressões com operadores lógicos e relacionais
   if (a > 5) and (b < 30) or not (a = 0) then
@@ -94,7 +83,19 @@ begin
   // if a = then writeln("erro"); // erro: expressão incompleta
   // for a := 1 to do writeln(a); // erro: falta valor final no for
   // while do writeln(a); // erro: falta expressão no while
-  // writeln("teste" // erro: falta parêntese fechando
+  // writeln("teste" // erro: falta parêntese fechando}
+
+//Teste for
+  for a := 1 to 5 do
+    writeln(a);
+
+  for i := 0 to 4 do 
+    sum := sum + i;
+
+//Teste for encadeado
+  for i := 0 to 2 do
+    for j := 0 to 1 do
+      total := total + (i * j);
 end.
 
 
