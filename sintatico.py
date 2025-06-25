@@ -316,6 +316,13 @@ class Sintatic:
         'for' <atrib> 'to' <endFor> 'do' <stmt> ;
         """
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["for"]) 
+
+        # Captura o nome da variável de controle do laço for na atribuição inicial
+        ident_token = self.token_atual()
+        if ident_token[0] != TIPO_TOKENS["IDENTIFICADOR"]:
+            raise SyntaxError("Esperado identificador na atribuição inicial do for.")
+        var_for = ident_token[1]
+
         self.analisar_atrib()
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["to"])
 
@@ -329,7 +336,6 @@ class Sintatic:
             raise SyntaxError(f"Esperado IDENT ou NUMint em endFor, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])
 
-        
         label_inicio = self.gerador_aux.novo_label()
         label_verdadeiro = self.gerador_aux.novo_label()
         label_falso = self.gerador_aux.novo_label()
@@ -340,9 +346,6 @@ class Sintatic:
 
         self.codigos_intermediarios.append(('Label', label_inicio, None, None))
 
-        # gera código para condição do laço: variável < limite_final
-        # supondo que a variável do for é o identificador da atribuição inicial
-        var_for = self.tokens[self.current_index - 4][1] 
         temp_cond = self.gerador_aux.nova_temp()
         self.codigos_intermediarios.append(('<', temp_cond, var_for, limite_final))
 
@@ -367,6 +370,7 @@ class Sintatic:
 
         self.pilha_labels_fim_laco.pop()
         self.pilha_labels_fim_laco.pop()
+
 
 
     def analisar_ioStmt(self):
