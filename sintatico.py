@@ -75,7 +75,7 @@ class Sintatic:
         self.gerador_aux = GeradorAux()  # Inicializa o gerador auxiliar
         self.codigos_intermediarios = []  # Lista para armazenar os códigos intermediários
         self.pilha_labels_fim_laco = []  # Pilha para armazenar labels de fim de laço para break
-        
+        self.tabela_tipos = {} 
         # Cria dicionário inverso para mapear número do token para lexema
         self.numero_para_lexema = {}
 
@@ -185,6 +185,7 @@ class Sintatic:
 
         # Gera código intermediário de atribuição inicial
         for ident in idents:
+            self.tabela_tipos[ident] = tipo  # <-- Adicione esta linha!
             self.codigos_intermediarios.append(('att', ident, valor_inicial, tipo))
 
     def analisar_lista_identificadores(self):
@@ -377,34 +378,48 @@ class Sintatic:
         """
         Analisa a produção <ioStmt>:
         'read' '(' 'IDENT' ')' ';' 
-        | 'write' '(' <outList> ')' ';' ;
+        | 'write' '(' <outList> ')' ';'
         | 'readln' '(' 'IDENT' ')' ';'
-        | 'writeln' '(' <outList> ')' ';' ;
+        | 'writeln' '(' <outList> ')' ';'
         """
-        codigos=[]
+        codigos = []
         token = self.token_atual()
         if token is None:
             raise SyntaxError("Fim inesperado do arquivo ao analisar ioStmt.")
 
         token_tipo = token[0]
 
-        if token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["read"], TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]}:  # read ou readln
+        if token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["read"], TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]}:
             self.consumir(token_tipo)
-            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])  # '('
+            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
             ident_token = self.token_atual()
-            self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])  # ')'
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
-            codigos.append(('call', self.numero_para_lexema[token_tipo], ident_token[1], None))
-        elif token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["write"], TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"]}:  # write ou writeln
+            self.consumir(TIPO_TOKENS["IDENTIFICADOR"])
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
+            tipo = self.tabela_tipos.get(ident_token[1], None)
+            codigos.append(('call', self.numero_para_lexema[token_tipo], ident_token[1], tipo))
+        elif token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["write"], TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"]}:
             self.consumir(token_tipo)
-            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])  # '('
+            self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
             out_codigos = self.analisar_outList()
-            #self.analisar_outList()
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])  # ')'
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])  # ';'
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
+            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
             for arg in out_codigos:
-                codigos.append(('call', self.numero_para_lexema[token_tipo], arg, None))
+                # Determina o tipo do argumento
+                if isinstance(arg, str):
+                    if arg in self.tabela_tipos:
+                        tipo = self.tabela_tipos[arg]
+                    elif arg.startswith('"') and arg.endswith('"'):
+                        tipo = "string"
+                    elif arg.replace('.', '', 1).isdigit():
+                        tipo = "real" if '.' in arg else "integer"
+                    elif arg.lower() in ("true", "false"):
+                        tipo = "boolean"
+                    else:
+                        tipo = None
+                else:
+                    tipo = None
+                codigos.append(('call', self.numero_para_lexema[token_tipo], arg, tipo))
         else:
             raise SyntaxError(f"Esperado comando de IO, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
         return codigos
@@ -433,27 +448,59 @@ class Sintatic:
             return []
 
     def analisar_out(self):
-        """
-        Analisa a produção <out>:
-        <expr> [ ':' NUMint [ ':' NUMint ] ]
-        """
-        resultado, codigos = self.analisar_expr()
-        # (Opcional: trate a formatação :NUMint[:NUMint] se quiser)
-        token = self.token_atual()
-        if token and token[0] == TIPO_TOKENS["DELIMITADOR"][":"]:
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
+            """
+            Analisa a produção <out>:
+            'STR' | 'IDENT' | 'NUMint' | 'NUMfloat' [ ':' NUMint [ ':' NUMint ] ]
+            """
             token = self.token_atual()
-            if token and token[0] == TIPO_TOKENS["NUMBER_INT"]:
-                self.consumir(TIPO_TOKENS["NUMBER_INT"])
+            if token is None:
+                raise SyntaxError("Fim inesperado do arquivo ao analisar out.")
+
+            token_tipo = int(token[0])
+            valor = None
+            if token_tipo == TIPO_TOKENS["STRING"]:  # STR
+                valor = token[1]
+                self.consumir(TIPO_TOKENS["STRING"])
+                valor = f'"{valor}"'
+            elif token_tipo == TIPO_TOKENS["IDENTIFICADOR"]:  # IDENT
+                valor = token[1]  # Captura o valor do identificador
+                self.consumir(TIPO_TOKENS["IDENTIFICADOR"])
+                # Verifica se há formatação :NUMint[:NUMint]
                 token = self.token_atual()
-                if token and token[0] == TIPO_TOKENS["DELIMITADOR"][":"]:
+                if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
                     self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
                     token = self.token_atual()
-                    if token and token[0] == TIPO_TOKENS["NUMBER_INT"]:
+                    if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
                         self.consumir(TIPO_TOKENS["NUMBER_INT"])
-        # Adicione os códigos intermediários da expressão ao buffer principal
-        self.codigos_intermediarios.extend(codigos)
-        return resultado  # Retorna o resultado da expressão (nome da temp ou valor)
+                        token = self.token_atual()
+                        if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                            self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
+                            token = self.token_atual()
+                            if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                                self.consumir(TIPO_TOKENS["NUMBER_INT"])
+            elif token_tipo == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                valor = token[1]  # Captura o valor do número inteiro
+                self.consumir(TIPO_TOKENS["NUMBER_INT"])
+                # Verifica se há formatação :NUMint[:NUMint]
+                token = self.token_atual()
+                if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                    self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
+                    token = self.token_atual()
+                    if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                        self.consumir(TIPO_TOKENS["NUMBER_INT"])
+                        token = self.token_atual()
+                        if token and int(token[0]) == TIPO_TOKENS["DELIMITADOR"][":"]:  # ':'
+                            self.consumir(TIPO_TOKENS["DELIMITADOR"][":"])
+                            token = self.token_atual()
+                            if token and int(token[0]) == TIPO_TOKENS["NUMBER_INT"]:  # NUMint
+                                self.consumir(TIPO_TOKENS["NUMBER_INT"])
+            elif token_tipo == TIPO_TOKENS["NUMBER_REAL"]:  # NUMfloat
+                valor = token[1]  # Captura o valor do número real
+                self.consumir(TIPO_TOKENS["NUMBER_REAL"])
+            else:
+                raise SyntaxError(f"Esperado STR, IDENT, NUMint ou NUMfloat, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
+            return valor  # Retorna o valor do out analisado
+
     
     def analisar_whileStmt(self):
         """
@@ -472,7 +519,7 @@ class Sintatic:
 
         # label do início do loop
         self.codigos_intermediarios.append(('Label', label_inicio, None, None))
-        resultado, codigos = self.analisar_expr()
+        resultado, codigos, tipo = self.analisar_expr()
         self.codigos_intermediarios.extend(codigos)
 
         # salto condicional baseado na expressão
@@ -499,7 +546,7 @@ class Sintatic:
         'if' <expr> 'then' <stmt> [ ';' ] <elsePart> ;
         """
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["if"])  # if
-        resultado, codigos = self.analisar_expr()
+        resultado, codigos, tipo = self.analisar_expr()
         self.codigos_intermediarios.extend(codigos)
         temp_cond = resultado
         label_true = self.gerador_aux.novo_label()
@@ -554,11 +601,19 @@ class Sintatic:
         'IDENT' ':=' <expr> ;
         """
         ident_token = self.token_atual()
-        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT
-        self.consumir(TIPO_TOKENS["OPERADORES"][":="])  # ':='
-        resultado, codigos_expr = self.analisar_add()
-        self.codigos_intermediarios.extend(codigos_expr)  # Adiciona os códigos intermediários gerados
-        self.codigos_intermediarios.append(('att', ident_token[1], resultado, None))  # Adiciona a atribuição
+        self.consumir(TIPO_TOKENS["IDENTIFICADOR"])
+        self.consumir(TIPO_TOKENS["OPERADORES"][":="])
+        resultado, codigos, tipo_expr = self.analisar_expr()
+        tipo_var = self.tabela_tipos.get(ident_token[1], None)
+        if tipo_var is None:
+            raise SyntaxError(f"Variável '{ident_token[1]}' não declarada.")
+        if tipo_var != tipo_expr:
+            raise SyntaxError(f"Tipo incompatível na atribuição: variável '{ident_token[1]}' é '{tipo_var}' e expressão é '{tipo_expr}'.")
+        self.codigos_intermediarios.extend(codigos)
+        if tipo_var == "string":
+            if not (resultado.startswith('"') and resultado.endswith('"')) and resultado not in self.tabela_tipos and not resultado.startswith("t"):
+                resultado = f'"{resultado}"'
+        self.codigos_intermediarios.append(('att', ident_token[1], resultado, tipo_var))
 
     def analisar_expr(self):
         """
@@ -572,10 +627,10 @@ class Sintatic:
         Analisa a produção <or>:
         <and> <restoOr> ;
         """
-        resultado, codigos = self.analisar_and()
-        return self.analisar_restoOr(resultado, codigos)
+        resultado, codigos, tipo = self.analisar_and()
+        return self.analisar_restoOr(resultado, codigos, tipo)
 
-    def analisar_restoOr(self, resultado_esq, codigos_esq):
+    def analisar_restoOr(self, resultado_esq, codigos_esq, tipo_esq):
         """
         Analisa a produção <restoOr>:
         'or' <and> <restoOr> | & ;
@@ -583,22 +638,24 @@ class Sintatic:
         token = self.token_atual()
         if token and token[0] == TIPO_TOKENS["LOGICOS"]["or"]:
             self.consumir(TIPO_TOKENS["LOGICOS"]["or"])
-            resultado_dir, codigos_dir = self.analisar_and()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_and()
+            if tipo_esq != "boolean" or tipo_dir != "boolean":
+                raise SyntaxError("Operador 'or' só pode ser usado com booleanos.")
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('or', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoOr(temp, codigos)
+            return self.analisar_restoOr(temp, codigos, "boolean")
         else:
-            return resultado_esq, codigos_esq
+            return resultado_esq, codigos_esq, tipo_esq
 
     def analisar_and(self):
         """
         Analisa a produção <and>:
         <not> <restoAnd> ;
         """
-        resultado, codigos = self.analisar_not()
-        return self.analisar_restoAnd(resultado, codigos)
+        resultado, codigos, tipo = self.analisar_not()
+        return self.analisar_restoAnd(resultado, codigos, tipo)
 
-    def analisar_restoAnd(self, resultado_esq, codigos_esq):
+    def analisar_restoAnd(self, resultado_esq, codigos_esq, tipo_esq):
         """
         Analisa a produção <restoAnd>:
         'and' <not> <restoAnd> | & ;
@@ -606,12 +663,14 @@ class Sintatic:
         token = self.token_atual()
         if token and token[0] == TIPO_TOKENS["LOGICOS"]["and"]:
             self.consumir(TIPO_TOKENS["LOGICOS"]["and"])
-            resultado_dir, codigos_dir = self.analisar_not()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_not()
+            if tipo_esq != "boolean" or tipo_dir != "boolean":
+                raise SyntaxError("Operador 'and' só pode ser usado com booleanos.")
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('and', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoAnd(temp, codigos)
+            return self.analisar_restoAnd(temp, codigos, "boolean")
         else:
-            return resultado_esq, codigos_esq
+            return resultado_esq, codigos_esq, tipo_esq
 
     def analisar_not(self):
         """
@@ -621,10 +680,12 @@ class Sintatic:
         token = self.token_atual()
         if token and token[0] == TIPO_TOKENS["LOGICOS"]["not"]:
             self.consumir(TIPO_TOKENS["LOGICOS"]["not"])
-            resultado, codigos = self.analisar_not()
+            resultado, codigos, tipo = self.analisar_not()
+            if tipo != "boolean":
+                raise SyntaxError("Operador 'not' só pode ser usado com booleanos.")
             temp = self.gerador_aux.nova_temp()
             codigos.append(('not', temp, resultado, None))
-            return temp, codigos
+            return temp, codigos, "boolean"
         else:
             return self.analisar_rel()
 
@@ -633,10 +694,10 @@ class Sintatic:
         Analisa a produção <rel>:
         <add> <restoRel> ;
         """
-        resultado_esq, codigos_esq = self.analisar_add()
-        return self.analisar_restoRel(resultado_esq, codigos_esq)
+        resultado_esq, codigos_esq, tipo_esq = self.analisar_add()
+        return self.analisar_restoRel(resultado_esq, codigos_esq, tipo_esq)
 
-    def analisar_restoRel(self, resultado_esq, codigos_esq):
+    def analisar_restoRel(self, resultado_esq, codigos_esq, tipo_esq):
         """
         Analisa a produção <restoRel>:
         '==' <add> | '<>' <add> | '<' <add> | '<=' <add> | '>' <add> | '>=' <add> | & ;
@@ -649,26 +710,30 @@ class Sintatic:
         }:
             op = self.numero_para_lexema[token[0]]
             self.consumir(token[0])
-            resultado_dir, codigos_dir = self.analisar_add()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_add()
+            # Checagem de tipos para relacionais
+            if tipo_esq != tipo_dir:
+                raise SyntaxError(f"Operação relacional entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}'.")
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [(op, temp, resultado_esq, resultado_dir)]
-            return temp, codigos
+            return temp, codigos, "boolean"
         else:
-            return resultado_esq, codigos_esq
+            return resultado_esq, codigos_esq, tipo_esq
         
     def analisar_add(self):
         """
         Analisa a produção <add>:
         <mult> <restoAdd> ;
         """
-        resultado, codigos = self.analisar_mult()
-        return self.analisar_restoAdd(resultado, codigos)
+        resultado, codigos, tipo = self.analisar_mult()
+        return self.analisar_restoAdd(resultado, codigos, tipo)
 
-    def analisar_restoAdd(self, resultado_esq, codigos_esq):
+    def analisar_restoAdd(self, resultado_esq, codigos_esq, tipo_esq):
         """
         Analisa a produção <restoAdd>:
         '+' <mult> <restoAdd> 
-        | '-' <mult> <restoAdd> | & ;
+        | '-' <mult> <restoAdd> 
+        | & ;
         """
         token = self.token_atual()
         if token and token[0] == TIPO_TOKENS["OPERADORES"]["+"]:
@@ -679,10 +744,15 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_mult()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_mult()
+            # Checagem de tipos para soma
+            if tipo_esq != tipo_dir:
+                raise SyntaxError(
+                    f"Operação '+' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('add', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoAdd(temp, codigos)
+            return self.analisar_restoAdd(temp, codigos, tipo_esq)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["-"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["-"])
@@ -691,22 +761,27 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_mult()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_mult()
+            if tipo_esq != tipo_dir:
+                raise SyntaxError(
+                    f"Operação '-' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('sub', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoAdd(temp, codigos)
+            return self.analisar_restoAdd(temp, codigos, tipo_esq)
         else:
-            return resultado_esq, codigos_esq
+            return resultado_esq, codigos_esq, tipo_esq
 
     def analisar_mult(self):
         """
         Analisa a produção <mult>:
         <uno> <restoMult> ;
         """
-        resultado, codigos = self.analisar_uno()
-        return self.analisar_restoMult(resultado, codigos)
+        resultado, codigos, tipo = self.analisar_uno()
+        return self.analisar_restoMult(resultado, codigos, tipo)
 
-    def analisar_restoMult(self, resultado_esq, codigos_esq):
+
+    def analisar_restoMult(self, resultado_esq, codigos_esq, tipo_esq):
         """
         Analisa a produção <restoMult>:
         '*' <uno> <restoMult>
@@ -723,10 +798,14 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_uno()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
+            if tipo_esq != tipo_dir:
+                raise SyntaxError(
+                    f"Operação '*' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('mult', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos)
+            return self.analisar_restoMult(temp, codigos, tipo_esq)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["/"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["/"])
@@ -735,10 +814,14 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_uno()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
+            if tipo_esq != tipo_dir:
+                raise SyntaxError(
+                    f"Operação '/' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('div', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos)
+            return self.analisar_restoMult(temp, codigos, tipo_esq)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["mod"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["mod"])
@@ -747,10 +830,14 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_uno()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
+            if tipo_esq != tipo_dir or tipo_esq != "integer":
+                raise SyntaxError(
+                    f"Operação 'mod' só pode ser usada entre inteiros. Encontrado: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('mod', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos)
+            return self.analisar_restoMult(temp, codigos, tipo_esq)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["div"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["div"])
@@ -759,13 +846,17 @@ class Sintatic:
                 raise SyntaxError(
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
-            resultado_dir, codigos_dir = self.analisar_uno()
+            resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
+            if tipo_esq != tipo_dir or tipo_esq != "integer":
+                raise SyntaxError(
+                    f"Operação 'div' só pode ser usada entre inteiros. Encontrado: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
+                )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('div', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos)
+            return self.analisar_restoMult(temp, codigos, tipo_esq)
         else:
-            return resultado_esq, codigos_esq
-
+            return resultado_esq, codigos_esq, tipo_esq
+        
     def analisar_uno(self):
         """
         Analisa a produção <uno>:
@@ -774,10 +865,12 @@ class Sintatic:
         token = self.token_atual()
         if token and token[0] == TIPO_TOKENS["OPERADORES"]["-"]:
             self.consumir(TIPO_TOKENS["OPERADORES"]["-"])
-            resultado, codigos = self.analisar_uno()
+            resultado, codigos, tipo = self.analisar_uno()
+            if tipo not in ("integer", "real"):
+                raise SyntaxError("Operador unário '-' só pode ser aplicado a inteiros ou reais.")
             temp = self.gerador_aux.nova_temp()
             codigos.append(('sub', temp, 0, resultado))
-            return temp, codigos
+            return temp, codigos, tipo
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["+"]:
             self.consumir(TIPO_TOKENS["OPERADORES"]["+"])
             return self.analisar_uno()
@@ -796,15 +889,34 @@ class Sintatic:
         token_tipo = token[0]
         if token_tipo in TOKENS_FATOR:
             self.consumir(token_tipo)
-            return token[1], []
+            # Descobre o tipo
+            if token_tipo == TIPO_TOKENS["IDENTIFICADOR"]:
+                # Trata true/false como boolean
+                if token[1].lower() in ("true", "false"):
+                    tipo = "boolean"
+                else:
+                    tipo = self.tabela_tipos.get(token[1], None)
+                    if tipo is None:
+                        raise SyntaxError(f"Identificador '{token[1]}' não declarado.")
+            elif token_tipo == TIPO_TOKENS["NUMBER_INT"]:
+                tipo = "integer"
+            elif token_tipo == TIPO_TOKENS["NUMBER_REAL"]:
+                tipo = "real"
+            elif token_tipo == TIPO_TOKENS["STRING"]:
+                tipo = "string"
+            elif token_tipo == TIPO_TOKENS["NUMBER_HEX"] or token_tipo == TIPO_TOKENS["NUMERO_OCT"]:
+                tipo = "integer"
+            else:
+                tipo = None
+            return token[1], [], tipo
         elif token_tipo == TIPO_TOKENS["DELIMITADOR"]["("]:
             self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
-            resultado, codigos = self.analisar_expr() # Analisar expressão dentro dos parênteses
+            resultado, codigos, tipo = self.analisar_expr()
             self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
-            return resultado, codigos
+            return resultado, codigos, tipo
         else:
             raise SyntaxError(f"Token inesperado '{token[1]}' na linha {token[2]}, coluna {token[3]} ao analisar fator.")
-        
+
     def analisar(self):
         """
         Inicia a análise sintática a partir da produção principal <function*>.

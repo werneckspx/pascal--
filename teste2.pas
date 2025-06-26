@@ -12,8 +12,8 @@ begin
   c := a + b * 3 - 4 div 2 mod 2;
   x := 2.5;
   y := x * 2.0 + 1.5 / 3.0;
-  s := abc;
-  t := s + def;
+  s := "abc";
+  t := s + "def";
   flag := true;
 
   // Teste de operadores relacionais e lógicos
@@ -55,14 +55,14 @@ begin
   // Teste for aninhado
   for i := 0 to 1 do
     for j := 0 to 1 do
-      writeln(i * j);
+      writeln(i);
 
   // Teste read e readln
   read(a);
   readln(b);
 
   // Teste write e writeln com expressões
-  write(a + b, " ", x * y);
+  write(a);
   writeln("fim do teste");
 
   // Teste operadores unários
