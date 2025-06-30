@@ -368,10 +368,8 @@ class Sintatic:
 
         self.analisar_stmt()
 
-        # incrementa a variável do for
-        temp_inc = self.gerador_aux.nova_temp()
-        self.codigos_intermediarios.append(('add', temp_inc, var_for, '1'))
-        self.codigos_intermediarios.append(('att', var_for, temp_inc, None))
+        # incrementa a variável do for 
+        self.codigos_intermediarios.append(('add', var_for, var_for, '1'))
 
         # salto incondicional para início do laço
         self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
