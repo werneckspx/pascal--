@@ -924,8 +924,10 @@ class Sintatic:
         self.analisar_funcao()
         print("Parsing concluído com sucesso!")
         print("Códigos intermediários gerados:")
-        for codigo in self.codigos_intermediarios:
-            print(codigo)
+        with open("codigo_intermediario.txt", "w", encoding="utf-8") as arquivo:
+            for codigo in self.codigos_intermediarios:
+                print(codigo)  # mantém o print no terminal
+                arquivo.write(str(codigo) + "\n")  # escreve no arquivo
 
     def analisar_chamada_proc(self):
         """

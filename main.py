@@ -1,5 +1,6 @@
 from lexer import Lexer
 from sintatico import Sintatic
+from compilador2 import compilador_codigo_intermediario
 
 def read_pascal_file(filename):
     with open(filename, "r") as file:
@@ -41,6 +42,11 @@ def main():
         print(f"[ERRO SINTÁTICO] {e}")
     except Exception as e:
         print(f"[ERRO] Ocorreu um erro: {e}")
+    try:
+        print("\n=== CÓDIGO INTERMEDIÁRIO ===")
+        compilador_codigo_intermediario("codigo_intermediario.txt")
+    except Exception as e:
+        print(f"[ERRO NA EXECUÇÃO DO INTERPRETADOR] {e}")
 
 if __name__ == "__main__":
     main()
