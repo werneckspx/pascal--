@@ -36,7 +36,10 @@ def compilador_codigo_intermediario(caminho_arquivo):
         op, arg1, arg2, arg3 = [x.upper() if i == 0 else x for i, x in enumerate(instr)]
 
         if op == 'ATT':
-            memoria[arg1] = val(arg2)
+            if arg3 == "integer" and isinstance(val(arg2), float):
+                memoria[arg1] = int(val(arg2))
+            else:
+                memoria[arg1] = val(arg2)
 
         elif op == 'ADD':
             memoria[arg1] = val(arg2) + val(arg3)
@@ -46,18 +49,22 @@ def compilador_codigo_intermediario(caminho_arquivo):
 
         elif op == 'MULT':
             memoria[arg1] = val(arg2) * val(arg3)
-
+        
         elif op == 'DIV':
             if val(arg3) == 0:
                 print(f"[ERRO] Divisão por zero (linha {pc})")
                 break
-            memoria[arg1] = val(arg2) / val(arg3)
-
+            memoria[arg1] = (val(arg2)) / (val(arg3))
+        elif op == 'IDIV':
+            if val(arg3) == 0:
+                print(f"[ERRO] Divisão inteira por zero (linha {pc})")
+                break
+            memoria[arg1] = int(val(arg2)) // int(val(arg3))
         elif op == 'MOD':
             if val(arg3) == 0:
                 print(f"[ERRO] Módulo por zero (linha {pc})")
                 break
-            memoria[arg1] = val(arg2) % val(arg3)
+            memoria[arg1] = int(val(arg2)) % int(val(arg3))
 
         elif op in ['EQ', '=', '==']:
             memoria[arg1] = int(val(arg2) == val(arg3))

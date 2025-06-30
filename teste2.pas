@@ -75,4 +75,33 @@ begin
   // Teste comandos vazios
   ;
   ;
+
+  a:= 1;
+  b := 2;
+  y := 3.99;
+  x := 16.21314;
+
+  a := b + y;
+  writeln(a);
+  y := x+b;
+  writeln(y);
+  y := x + a;
+  writeln(y);
+  if(a < y+b) then
+    x := y;
+  writeln(x);
+
+  a := $A;      // 10 em decimal
+  b := $1F;     // 31 em decimal
+  c := $FF;     // 255 em decimal
+  writeln(a);   // Deve imprimir 10
+  writeln(b);   // Deve imprimir 31
+  writeln(c);   // Deve imprimir 255
+
+  a := 10;
+  b := $A;
+  c := &12;
+  writeln(a);   // 10
+  writeln(b);   // 10
+  writeln(c);   // 10
 end.

@@ -607,7 +607,8 @@ class Sintatic:
         tipo_var = self.tabela_tipos.get(ident_token[1], None)
         if tipo_var is None:
             raise SyntaxError(f"Variável '{ident_token[1]}' não declarada.")
-        if tipo_var != tipo_expr:
+        # Permite atribuição real->integer (truncar no interpretador), ou igual
+        if not (tipo_var == tipo_expr or (tipo_var == "integer" and tipo_expr == "real")):
             raise SyntaxError(f"Tipo incompatível na atribuição: variável '{ident_token[1]}' é '{tipo_var}' e expressão é '{tipo_expr}'.")
         self.codigos_intermediarios.extend(codigos)
         if tipo_var == "string":
@@ -698,10 +699,6 @@ class Sintatic:
         return self.analisar_restoRel(resultado_esq, codigos_esq, tipo_esq)
 
     def analisar_restoRel(self, resultado_esq, codigos_esq, tipo_esq):
-        """
-        Analisa a produção <restoRel>:
-        '==' <add> | '<>' <add> | '<' <add> | '<=' <add> | '>' <add> | '>=' <add> | & ;
-        """
         token = self.token_atual()
         if token and token[0] in {
             TIPO_TOKENS["RELACIONAIS"]["=="], TIPO_TOKENS["RELACIONAIS"]["<>"],
@@ -711,15 +708,19 @@ class Sintatic:
             op = self.numero_para_lexema[token[0]]
             self.consumir(token[0])
             resultado_dir, codigos_dir, tipo_dir = self.analisar_add()
-            # Checagem de tipos para relacionais
-            if tipo_esq != tipo_dir:
+            # Permite comparações entre integer e real
+            if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
+                tipo_cmp = "real"
+            elif tipo_esq == tipo_dir:
+                tipo_cmp = tipo_esq
+            else:
                 raise SyntaxError(f"Operação relacional entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}'.")
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [(op, temp, resultado_esq, resultado_dir)]
             return temp, codigos, "boolean"
         else:
             return resultado_esq, codigos_esq, tipo_esq
-        
+            
     def analisar_add(self):
         """
         Analisa a produção <add>:
@@ -745,14 +746,18 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_mult()
-            # Checagem de tipos para soma
-            if tipo_esq != tipo_dir:
+            # Permite integer + real, real + integer, real + real, integer + integer, string + string
+            if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
+                tipo_result = "real" if "real" in (tipo_esq, tipo_dir) else "integer"
+            elif tipo_esq == tipo_dir == "string":
+                tipo_result = "string"
+            else:
                 raise SyntaxError(
                     f"Operação '+' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('add', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoAdd(temp, codigos, tipo_esq)
+            return self.analisar_restoAdd(temp, codigos, tipo_result)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["-"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["-"])
@@ -762,13 +767,15 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_mult()
-            if tipo_esq != tipo_dir:
+            if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
+                tipo_result = "real" if "real" in (tipo_esq, tipo_dir) else "integer"
+            else:
                 raise SyntaxError(
                     f"Operação '-' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('sub', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoAdd(temp, codigos, tipo_esq)
+            return self.analisar_restoAdd(temp, codigos, tipo_result)
         else:
             return resultado_esq, codigos_esq, tipo_esq
 
@@ -799,13 +806,15 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
-            if tipo_esq != tipo_dir:
+            if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
+                tipo_result = "real" if "real" in (tipo_esq, tipo_dir) else "integer"
+            else:
                 raise SyntaxError(
                     f"Operação '*' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('mult', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos, tipo_esq)
+            return self.analisar_restoMult(temp, codigos, tipo_result)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["/"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["/"])
@@ -815,13 +824,16 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
-            if tipo_esq != tipo_dir:
+            # Em Pascal, divisão '/' sempre resulta em real
+            if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
+                tipo_result = "real"
+            else:
                 raise SyntaxError(
                     f"Operação '/' entre tipos incompatíveis: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('div', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos, tipo_esq)
+            return self.analisar_restoMult(temp, codigos, tipo_result)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["mod"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["mod"])
@@ -831,13 +843,15 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
-            if tipo_esq != tipo_dir or tipo_esq != "integer":
+            if tipo_esq == tipo_dir == "integer":
+                tipo_result = "integer"
+            else:
                 raise SyntaxError(
                     f"Operação 'mod' só pode ser usada entre inteiros. Encontrado: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
             codigos = codigos_esq + codigos_dir + [('mod', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos, tipo_esq)
+            return self.analisar_restoMult(temp, codigos, tipo_result)
         elif token and token[0] == TIPO_TOKENS["OPERADORES"]["div"]:
             op_token = token
             self.consumir(TIPO_TOKENS["OPERADORES"]["div"])
@@ -847,13 +861,15 @@ class Sintatic:
                     f"Dois operadores aritméticos seguidos ('{op_token[1]}{next_token[1]}') na linha {op_token[2]}, coluna {op_token[3]}."
                 )
             resultado_dir, codigos_dir, tipo_dir = self.analisar_uno()
-            if tipo_esq != tipo_dir or tipo_esq != "integer":
+            if tipo_esq == tipo_dir == "integer":
+                tipo_result = "integer"
+            else:
                 raise SyntaxError(
                     f"Operação 'div' só pode ser usada entre inteiros. Encontrado: '{tipo_esq}' e '{tipo_dir}' na linha {op_token[2]}, coluna {op_token[3]}"
                 )
             temp = self.gerador_aux.nova_temp()
-            codigos = codigos_esq + codigos_dir + [('div', temp, resultado_esq, resultado_dir)]
-            return self.analisar_restoMult(temp, codigos, tipo_esq)
+            codigos = codigos_esq + codigos_dir + [('idiv', temp, resultado_esq, resultado_dir)]
+            return self.analisar_restoMult(temp, codigos, tipo_result)
         else:
             return resultado_esq, codigos_esq, tipo_esq
         
@@ -889,7 +905,6 @@ class Sintatic:
         token_tipo = token[0]
         if token_tipo in TOKENS_FATOR:
             self.consumir(token_tipo)
-            # Descobre o tipo
             if token_tipo == TIPO_TOKENS["IDENTIFICADOR"]:
                 # Trata true/false como boolean
                 if token[1].lower() in ("true", "false"):
@@ -898,17 +913,27 @@ class Sintatic:
                     tipo = self.tabela_tipos.get(token[1], None)
                     if tipo is None:
                         raise SyntaxError(f"Identificador '{token[1]}' não declarado.")
+                return token[1], [], tipo
             elif token_tipo == TIPO_TOKENS["NUMBER_INT"]:
                 tipo = "integer"
+                return token[1], [], tipo
             elif token_tipo == TIPO_TOKENS["NUMBER_REAL"]:
                 tipo = "real"
+                return token[1], [], tipo
             elif token_tipo == TIPO_TOKENS["STRING"]:
                 tipo = "string"
-            elif token_tipo == TIPO_TOKENS["NUMBER_HEX"] or token_tipo == TIPO_TOKENS["NUMERO_OCT"]:
+                return token[1], [], tipo
+            elif token_tipo == TIPO_TOKENS["NUMBER_HEX"]:
                 tipo = "integer"
+                valor_convertido = str(int(token[1][1:], 16))  # Mantém como string para o pipeline
+                return valor_convertido, [], tipo
+            elif token_tipo == TIPO_TOKENS["NUMERO_OCT"]:
+                tipo = "integer"
+                valor_convertido = str(int(token[1][1:], 8))   # Mantém como string para o pipeline
+                return valor_convertido, [], tipo
             else:
                 tipo = None
-            return token[1], [], tipo
+                return token[1], [], tipo
         elif token_tipo == TIPO_TOKENS["DELIMITADOR"]["("]:
             self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
             resultado, codigos, tipo = self.analisar_expr()
