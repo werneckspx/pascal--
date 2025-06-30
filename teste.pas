@@ -1,13 +1,12 @@
 program teste;
 var
-  a, a_1: integer;
-  b: real;
-  c: string;
-  d: boolean;
+  a, a_1, i, sum, j, total: integer;
+  b,resultado: integer;
+  d,c,e,f,g,h,k,l,m,n,o,p,q,r:integer;
 begin
 {
   a := (1 + 2);
-
+  a := "salve" + 1
   e: real;
 
   // Teste if-else com else if encadeado
@@ -85,7 +84,7 @@ begin
   // if a = then writeln("erro"); // erro: expressão incompleta
   // for a := 1 to do writeln(a); // erro: falta valor final no for
   // while do writeln(a); // erro: falta expressão no while
-  // writeln("teste" // erro: falta parêntese fechando}
+  // writeln("teste" // erro: falta parêntese fechando
 
 //Teste for
   for a := 1 to 5 do
@@ -97,7 +96,7 @@ begin
 //Teste for encadeado
   for i := 0 to 2 do
     for j := 0 to 1 do
-      total := total + (i * j);
+      total := total + (i * j);}
 end.
 
 

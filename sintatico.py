@@ -49,6 +49,16 @@ TOKENS_FATOR = {
     TIPO_TOKENS["STRING"]
 }
 
+OPERADORES_RELACIONAIS_SIMBOLOS = {
+    TIPO_TOKENS["RELACIONAIS"]["=="]: "eq",
+    TIPO_TOKENS["RELACIONAIS"]["="]: "eq",
+    TIPO_TOKENS["RELACIONAIS"]["<>"]: "neq",
+    TIPO_TOKENS["RELACIONAIS"]["<"]: "less",
+    TIPO_TOKENS["RELACIONAIS"]["<="]: "leq",
+    TIPO_TOKENS["RELACIONAIS"][">"]: "gret",
+    TIPO_TOKENS["RELACIONAIS"][">="]: "geq",
+}
+
 class GeradorAux:
     def __init__(self):
         self.temp_count = 0
@@ -348,7 +358,7 @@ class Sintatic:
         self.codigos_intermediarios.append(('Label', label_inicio, None, None))
 
         temp_cond = self.gerador_aux.nova_temp()
-        self.codigos_intermediarios.append(('<', temp_cond, var_for, limite_final))
+        self.codigos_intermediarios.append(('less', temp_cond, var_for, limite_final)) #<
 
         # salto condicional para corpo do laço ou fim do laço
         self.codigos_intermediarios.append(('If', temp_cond, label_verdadeiro, label_falso))
@@ -388,6 +398,7 @@ class Sintatic:
             raise SyntaxError("Fim inesperado do arquivo ao analisar ioStmt.")
 
         token_tipo = token[0]
+        #lexema_op = self.numero_para_lexema[token_tipo]
 
         if token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["read"], TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]}:
             self.consumir(token_tipo)
@@ -397,15 +408,20 @@ class Sintatic:
             self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
             tipo = self.tabela_tipos.get(ident_token[1], None)
-            codigos.append(('call', self.numero_para_lexema[token_tipo], ident_token[1], tipo))
+            codigos.append(('call', 'read', ident_token[1], tipo))
+            
+            # Se for readln, adiciona quebra de linha
+            if token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["readln"]:
+                codigos.append(('call', 'write', '"\n"', "string"))
+
         elif token_tipo in {TIPO_TOKENS["PALAVRA-CHAVE"]["write"], TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"]}:
             self.consumir(token_tipo)
             self.consumir(TIPO_TOKENS["DELIMITADOR"]["("])
             out_codigos = self.analisar_outList()
             self.consumir(TIPO_TOKENS["DELIMITADOR"][")"])
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
+
             for arg in out_codigos:
-                # Determina o tipo do argumento
                 if isinstance(arg, str):
                     if arg in self.tabela_tipos:
                         tipo = self.tabela_tipos[arg]
@@ -419,10 +435,17 @@ class Sintatic:
                         tipo = None
                 else:
                     tipo = None
-                codigos.append(('call', self.numero_para_lexema[token_tipo], arg, tipo))
+                codigos.append(('call', 'write', arg, tipo))
+            
+            # Se for writeln, adiciona quebra de linha
+            if token_tipo == TIPO_TOKENS["PALAVRA-CHAVE"]["writeln"]:
+                codigos.append(('call', 'write', '"\n"', "string"))
+
         else:
             raise SyntaxError(f"Esperado comando de IO, mas encontrado '{token[1]}' na linha {token[2]}, coluna {token[3]}.")
+        
         return codigos
+
     
     def analisar_outList(self):
         """
@@ -705,7 +728,7 @@ class Sintatic:
             TIPO_TOKENS["RELACIONAIS"]["<"], TIPO_TOKENS["RELACIONAIS"]["<="],
             TIPO_TOKENS["RELACIONAIS"][">"], TIPO_TOKENS["RELACIONAIS"][">="]
         }:
-            op = self.numero_para_lexema[token[0]]
+            op = OPERADORES_RELACIONAIS_SIMBOLOS[token[0]] #self.numero_para_lexema[token[0]]
             self.consumir(token[0])
             resultado_dir, codigos_dir, tipo_dir = self.analisar_add()
             # Permite comparações entre integer e real

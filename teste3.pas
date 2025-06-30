@@ -41,8 +41,6 @@ begin
   writeln("17 div 3 = ", e);
   writeln("17 mod 3 = ", f);
 end.
-}
-
 
 program TesteExpressaoCompleta;
 var
@@ -93,4 +91,37 @@ begin
   writeln(b);   // 10
   writeln(c);   // 10
 
+end.
+}
+
+program TesteExpressaoCompleta;
+var
+  a, b, c, aux1: integer;
+  x, y, aux,resultado: real;
+  flag: boolean;
+begin
+  a := 10;
+  b := 3;
+  c := 2;
+  x := 2.5;
+  y := 4.0;
+
+  // Expressão única com todas as operações
+  flag := not ( ((a + b * c - 5 div 2 + 8 mod 3) > (x + y * 2.0 - a / b + 7.5))
+             and ((a < x) or (b >= c)) );
+  resultado := 3.0+4;
+  {writeln(flag); 
+  writeln(resultado);
+  write("teste\no\\n");
+  write(resultado);
+  readln(resultado);
+  write("resultado");
+  read(resultado);
+  write(resultado);}
+
+
+  read(resultado);
+  writeln(resultado);
+  write("foi");
+  write("mesmo");
 end.
