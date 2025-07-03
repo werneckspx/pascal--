@@ -40,8 +40,10 @@ def main():
         print("Análise sintática concluída com sucesso!")
     except SyntaxError as e:
         print(f"[ERRO SINTÁTICO] {e}")
+        exit(1)
     except Exception as e:
         print(f"[ERRO] Ocorreu um erro: {e}")
+        exit(1)
     try:
         print("\n=== CÓDIGO INTERMEDIÁRIO ===")
         compilador_codigo_intermediario("codigo_intermediario.txt")

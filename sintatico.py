@@ -980,4 +980,9 @@ class Sintatic:
         Analisa uma chamada de procedimento simples:
         'IDENT' ';'
         """
+        ident_token = self.token_atual()
+        nome_ident = ident_token[1]
+        # Verifica se o identificador foi declarado
+        if nome_ident not in self.tabela_tipos:
+            raise SyntaxError(f"Identificador '{nome_ident}' não declarado na linha {ident_token[2]}, coluna {ident_token[3]}.")
         self.consumir(TIPO_TOKENS["IDENTIFICADOR"])  # IDENT

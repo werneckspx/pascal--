@@ -36,7 +36,9 @@ def compilador_codigo_intermediario(caminho_arquivo):
         op, arg1, arg2, arg3 = [x.upper() if i == 0 else x for i, x in enumerate(instr)]
 
         if op == 'ATT':
-            if arg3 == "integer" and isinstance(val(arg2), float):
+            if arg3 == "string" and isinstance(arg2, str) and arg2.startswith('"') and arg2.endswith('"'):
+                memoria[arg1] = arg2[1:-1]
+            elif arg3 == "integer" and isinstance(val(arg2), float):
                 memoria[arg1] = int(val(arg2))
             else:
                 memoria[arg1] = val(arg2)
@@ -119,12 +121,10 @@ def compilador_codigo_intermediario(caminho_arquivo):
                     break
 
             elif arg1.lower() in ['write', 'writeln']:
-                # Se for string literal entre aspas, print sem aspas e sem '= valor'
                 if isinstance(arg2, str) and arg2.startswith('"') and arg2.endswith('"'):
                     texto = arg2[1:-1]
                     print(texto, end='' if arg1.lower() == 'write' else '\n')
                 else:
-                    # valor de variável
                     print(val(arg2), end='' if arg1.lower() == 'write' else '\n')
 
 
