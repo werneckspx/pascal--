@@ -195,7 +195,12 @@ class Sintatic:
 
         # Gera código intermediário de atribuição inicial
         for ident in idents:
-            self.tabela_tipos[ident] = tipo  # <-- Adicione esta linha!
+            if ident in self.tabela_tipos:
+                raise SyntaxError(f"Variável '{ident}' já declarada anteriormente.")
+            # Verifica se é palavra reservada
+            if ident.lower() in TIPO_TOKENS["PALAVRA-CHAVE"]:
+                raise SyntaxError(f"Nome de variável '{ident}' é uma palavra reservada.")
+            self.tabela_tipos[ident] = tipo
             self.codigos_intermediarios.append(('att', ident, valor_inicial, tipo))
 
     def analisar_lista_identificadores(self):
@@ -315,8 +320,6 @@ class Sintatic:
                 raise SyntaxError("Label de início do laço não encontrado para comando 'continue'.")
             self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
             self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["continue"])
-            self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
-        elif token_tipo == TIPO_TOKENS["DELIMITADOR"][";"]:  # ';'
             self.consumir(TIPO_TOKENS["DELIMITADOR"][";"])
         else:
             raise SyntaxError(f"Token inesperado '{token_lexema}' na linha {token[2]}, coluna {token[3]} ao analisar comando.")
@@ -771,6 +774,11 @@ class Sintatic:
             if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
                 tipo_result = "real" if "real" in (tipo_esq, tipo_dir) else "integer"
             elif tipo_esq == tipo_dir == "string":
+                # Garante que literais estejam entre aspas
+                if resultado_esq not in self.tabela_tipos and not resultado_esq.startswith('"'):
+                    resultado_esq = f'"{resultado_esq}"'
+                if resultado_dir not in self.tabela_tipos and not resultado_dir.startswith('"'):
+                    resultado_dir = f'"{resultado_dir}"'
                 tipo_result = "string"
             else:
                 raise SyntaxError(

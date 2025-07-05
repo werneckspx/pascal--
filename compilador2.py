@@ -26,6 +26,8 @@ def compilador_codigo_intermediario(caminho_arquivo):
         if isinstance(x, str):
             if x.lstrip('-').replace('.', '', 1).isdigit():
                 return float(x) if '.' in x else int(x)
+            if x.startswith('"') and x.endswith('"'):
+                return x[1:-1]  # Retorna o conteúdo da string literal
             return memoria.get(x, 0)
         return x
 

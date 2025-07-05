@@ -5,10 +5,8 @@ var n1,n2,n3,media,exame: real;
 
 begin;
 
- clrscr;
  writeln ("caro usuario agora calcularemos a media de 3 notas e diremos sua situacao.");
  write ("para prosseguir tecle enter");
- readkey;
 
  clrscr;
  writeln ("por favor digite a primeira nota ");
