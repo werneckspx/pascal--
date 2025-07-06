@@ -369,7 +369,8 @@ class Sintatic:
         # label para corpo do laço
         self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
 
-        self.analisar_stmt()
+        # self.analisar_stmt()
+        self.analisar_lista_comandos()
 
         # incrementa a variável do for 
         self.codigos_intermediarios.append(('add', var_for, var_for, '1'))
@@ -552,7 +553,8 @@ class Sintatic:
         # label para o bloco verdadeiro (corpo do while)
         self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
-        self.analisar_stmt()
+        # self.analisar_stmt()
+        self.analisar_lista_comandos()
 
         # salto incondicional para o início do loop
         self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
@@ -582,7 +584,8 @@ class Sintatic:
         
         # label para o bloco verdadeiro
         self.codigos_intermediarios.append(('Label', label_true, None, None))
-        self.analisar_stmt()
+        # self.analisar_stmt()
+        self.analisar_lista_comandos()
         # salto incondicional para o fim do if para pular o else
         self.codigos_intermediarios.append(('Jump', label_fim, None, None))
         

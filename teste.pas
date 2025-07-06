@@ -3,6 +3,7 @@ var
   a, a_1, i, sum, j, total: integer;
   b,resultado: integer;
   d,c,e,f,g,h,k,l,m,n,o,p,q,r:integer;
+  justo: string;
 begin
 {
   a := (1 + 2);
@@ -85,18 +86,21 @@ begin
   // for a := 1 to do writeln(a); // erro: falta valor final no for
   // while do writeln(a); // erro: falta expressão no while
   // writeln("teste" // erro: falta parêntese fechando}
-
-//Teste for
+{//Teste for
   for a := 1 to 5 do
     writeln(a);
 
   for i := 0 to 4 do 
     sum := sum + i;
-
+}
 //Teste for encadeado
   for i := 0 to 2 do
     for j := 0 to 1 do
       total := total + (i * j);
+      writeln(total);
+      readln(justo);
+      justo := "Eu sou o mais " + justo;
+      writeln(justo);
 end.
 
 
