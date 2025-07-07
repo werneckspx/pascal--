@@ -42,8 +42,20 @@ def compilador_codigo_intermediario(caminho_arquivo):
                 memoria[arg1] = arg2[1:-1]
             elif arg3 == "integer" and isinstance(val(arg2), float):
                 memoria[arg1] = int(val(arg2))
-            else:
-                memoria[arg1] = val(arg2)
+            elif arg3 == "real":
+                memoria[arg1] = float(val(arg2))
+            elif arg3 == "boolean":
+                # Trata "true"/"false" (com ou sem aspas) corretamente
+                if isinstance(arg2, str):
+                    valor = arg2.strip('"').lower()
+                    if valor == "true":
+                        memoria[arg1] = True
+                    elif valor == "false":
+                        memoria[arg1] = False
+                    else:
+                        memoria[arg1] = bool(val(arg2))
+                else:
+                    memoria[arg1] = bool(val(arg2))
 
         elif op == 'ADD':
             memoria[arg1] = val(arg2) + val(arg3)

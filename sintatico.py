@@ -641,6 +641,11 @@ class Sintatic:
         if tipo_var == "string":
             if not (resultado.startswith('"') and resultado.endswith('"')) and resultado not in self.tabela_tipos and not resultado.startswith("t"):
                 resultado = f'"{resultado}"'
+        if tipo_var == "boolean":
+            # Se não for variável booleana, converte para "true"/"false" com aspas
+            if resultado.lower() in ("true", "false") and not (resultado.startswith('"') and resultado.endswith('"')):
+                resultado = f'"{resultado.lower()}"'
+        
         self.codigos_intermediarios.append(('att', ident_token[1], resultado, tipo_var))
 
     def analisar_expr(self):
