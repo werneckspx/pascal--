@@ -15,15 +15,19 @@ begin
   y := x * 2.0 + 1.5 / 3.0;
   s := "abc";
   t := s + "def";
-  flag := true;
+  flag := false;
 
-  // Teste de operadores relacionais e lógicos
-  if (a = b) or (x <> y) and not flag then
-    writeln("relacional e logico ok");
-
+  writeln(a);
+  writeln(b);
+  writeln(c);
+  writeln(x);
+  writeln(y);
+  writeln(s);
+  writeln(t);
+  writeln(flag);
   // Teste de bloco begin/end e comandos vazios
 
-
+{
   // Teste if-else encadeado
   if a > 0 then
     writeln("a > 0");
@@ -91,5 +95,5 @@ begin
   // Teste break/continue fora de laço
   //break;              // ERRO
   //continue;           // ERRO
-
+  }
 end.

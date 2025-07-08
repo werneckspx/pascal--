@@ -369,8 +369,7 @@ class Sintatic:
         # label para corpo do laço
         self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
 
-        # self.analisar_stmt()
-        self.analisar_lista_comandos()
+        self.analisar_stmt()
 
         # incrementa a variável do for 
         self.codigos_intermediarios.append(('add', var_for, var_for, '1'))
@@ -553,8 +552,7 @@ class Sintatic:
         # label para o bloco verdadeiro (corpo do while)
         self.codigos_intermediarios.append(('Label', label_verdadeiro, None, None))
         self.consumir(TIPO_TOKENS["PALAVRA-CHAVE"]["do"])  # do
-        # self.analisar_stmt()
-        self.analisar_lista_comandos()
+        self.analisar_stmt()
 
         # salto incondicional para o início do loop
         self.codigos_intermediarios.append(('Jump', label_inicio, None, None))
@@ -743,6 +741,13 @@ class Sintatic:
             # Permite comparações entre integer e real
             if (tipo_esq in ("integer", "real") and tipo_dir in ("integer", "real")):
                 tipo_cmp = "real"
+            elif tipo_esq == tipo_dir == "string":
+                # Só permite = e <>
+                if op not in ("eq", "neq"):
+                    raise SyntaxError(
+                        f"Operador relacional '{token[1]}' não permitido para strings na linha {token[2]}, coluna {token[3]}."
+                    )
+                tipo_cmp = "string"
             elif tipo_esq == tipo_dir:
                 tipo_cmp = tipo_esq
             else:

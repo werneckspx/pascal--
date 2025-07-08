@@ -40,7 +40,7 @@ def compilador_codigo_intermediario(caminho_arquivo):
         if op == 'ATT':
             if arg3 == "string" and isinstance(arg2, str) and arg2.startswith('"') and arg2.endswith('"'):
                 memoria[arg1] = arg2[1:-1]
-            elif arg3 == "integer" and isinstance(val(arg2), float):
+            elif arg3 == "integer":
                 memoria[arg1] = int(val(arg2))
             elif arg3 == "real":
                 memoria[arg1] = float(val(arg2))
@@ -116,6 +116,7 @@ def compilador_codigo_intermediario(caminho_arquivo):
                 tipo = (arg3 or '').lower()
                 try:
                     if tipo == "integer":
+                        print(f"arg2: {arg2}, tipo: {tipo}")
                         memoria[arg2] = int(entrada)
                     elif tipo == "real":
                         memoria[arg2] = float(entrada)
